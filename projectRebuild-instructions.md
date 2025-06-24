@@ -1,6 +1,9 @@
 We are going to build a React-Native WebRTC app from scratch
 -Shahmir Khan June 23, 2025
 
+install expo-cli
+npm install expo-cli
+
 First lets create the expo project:
 npx create-expo-app WebRTCApp --template blank
 

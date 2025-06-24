@@ -282,6 +282,35 @@ export default function CallScreen({ navigation }) {
   };
 
   /**
+   * Reset WebRTC peer connection
+   * Creates new peer connection and registers event handlers
+   */
+  const resetPeer = () => {
+    yourConn.current = new RTCPeerConnection({
+      iceServers: [
+        {
+          urls: STUN_SERVER,
+        },
+        {
+          urls: TURN_SERVER,
+          username: TURN_USERNAME,
+          credential: TURN_CREDENTIAL,
+        },
+      ],
+    });
+    registerPeerEvents();
+  };
+
+  const fetchAvailableUsers = () => {
+    if (conn.current && conn.current.readyState === WebSocket.OPEN) {
+      send({
+        type: 'activeUsers',
+        sender: userId,
+      });
+    }
+  };
+
+  /**
    * Initialize local video stream using camera and microphone
    * Creates media stream and adds tracks to peer connection
    */
@@ -402,6 +431,17 @@ export default function CallScreen({ navigation }) {
   };
 
   /**
+   * Reject an incoming call
+   * Sends leave message to signaling server
+   */
+  const rejectCall = async () => {
+    send({
+      type: 'rejectCall',
+    });
+  };
+
+
+  /**
    * Accept an incoming call
    * Creates and sends answer to the calling user
    */
@@ -447,47 +487,6 @@ export default function CallScreen({ navigation }) {
   };
 
   /**
-   * Handle logout by sending leave message to backend
-   * Notifies server that user is leaving
-   */
-  const handleLogout = () => {
-    console.log('🚪 handleLogout called - sending leave message');
-    send({
-      type: 'leave',
-      sender: userIdRef.current,
-    });
-  };
-
-  /**
-   * Logout user and navigate to login screen
-   * Cleans up call state and removes user ID from storage
-   */
-  const onLogout = () => {
-    console.log('🚪 onLogout called');
-    handleHangUp();
-    handleLogout();
-    // Close WebSocket connection if it exists
-    // conn.current holds our WebSocket connection to the signaling server
-    // that handles call setup and peer coordination
-    // The ? is the optional chaining operator - it only calls close() 
-    // if conn.current exists, preventing errors if the connection is null
-    conn.current?.close();
-    AsyncStorage.removeItem('userId').then((res) => {
-      navigation.navigate('Login');
-    });
-  };
-
-  /**
-   * Reject an incoming call
-   * Sends leave message to signaling server
-   */
-  const rejectCall = async () => {
-    send({
-      type: 'rejectCall',
-    });
-  };
-
-  /**
    * End current call and clean up resources
    * Resets all call state and peer connection
    */
@@ -524,33 +523,40 @@ export default function CallScreen({ navigation }) {
   };
 
   /**
-   * Reset WebRTC peer connection
-   * Creates new peer connection and registers event handlers
+   * Handle logout by sending leave message to backend
+   * Notifies server that user is leaving
    */
-  const resetPeer = () => {
-    yourConn.current = new RTCPeerConnection({
-      iceServers: [
-        {
-          urls: STUN_SERVER,
-        },
-        {
-          urls: TURN_SERVER,
-          username: TURN_USERNAME,
-          credential: TURN_CREDENTIAL,
-        },
-      ],
+  const handleLogout = () => {
+    console.log('🚪 handleLogout called - sending leave message');
+    send({
+      type: 'leave',
+      sender: userIdRef.current,
     });
-    registerPeerEvents();
   };
 
-  const fetchAvailableUsers = () => {
-    if (conn.current && conn.current.readyState === WebSocket.OPEN) {
-      send({
-        type: 'activeUsers',
-        sender: userId,
-      });
-    }
+  /**
+   * Logout user and navigate to login screen
+   * Cleans up call state and removes user ID from storage
+   */
+  const onLogout = () => {
+    console.log('🚪 onLogout called');
+    handleHangUp();
+    handleLogout();
+    // Close WebSocket connection if it exists
+    // conn.current holds our WebSocket connection to the signaling server
+    // that handles call setup and peer coordination
+    // The ? is the optional chaining operator - it only calls close() 
+    // if conn.current exists, preventing errors if the connection is null
+    conn.current?.close();
+    AsyncStorage.removeItem('userId').then((res) => {
+      navigation.navigate('Login');
+    });
   };
+
+  
+  
+
+  
 
   const handleUserCall = (userName) => {
     setCallToUsername(userName);
