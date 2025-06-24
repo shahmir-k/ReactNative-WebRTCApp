@@ -4,30 +4,31 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, Alert, Platform, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Button, TextInput, Card } from 'react-native-paper';
+import { Text, Button, TextInput, Card, IconButton } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import InCallManager from 'react-native-incall-manager';
 import Modal from 'react-native-modal';
 import {
-  RTCPeerConnection, //normal and used
-  RTCIceCandidate, //normal and used
-  RTCSessionDescription, //normal and used
-  RTCView, //normal and used
-  mediaDevices, //normal and used
+  RTCPeerConnection, //used for all platforms
+  RTCIceCandidate, //used for all platforms
+  RTCSessionDescription, //used for all platforms
+  RTCView, //used for all platforms
+  mediaDevices, //used for all platforms
 
-  registerGlobals, //normal
-  MediaStream, //normal
-  MediaStreamTrack, //normal
-  RTCRtpTransceiver, //web only
-  RTCRtpReceiver, //web only
-  RTCRtpSender, //web only
-  RTCErrorEvent, //web only
-  permissions, //web only
+  registerGlobals, //not used, for all platforms
+  MediaStream, //not used, for all platforms
+  MediaStreamTrack, //not used, for all platforms
+  RTCRtpTransceiver, //not used, web only
+  RTCRtpReceiver, //not used, web only
+  RTCRtpSender, //not used, web only
+  RTCErrorEvent, //not used, web only
+  permissions, //not used, web only
 } from 'react-native-webrtc-web-shim';
 
 import { requestAllPermissions } from '../utils/permissions';
 
+// TODO: add these to .env file
 const STUN_SERVER = 'stun:stun.l.google.com:19302';
 const TURN_SERVER = 'turn:openrelay.metered.ca:80';
 const TURN_USERNAME = 'openrelayproject';
@@ -42,6 +43,8 @@ export default function CallScreen({ navigation }) {
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const permissionsGrantedRef = useRef(false);
+  const [error, setError] = useState('');
 
   // WebSocket connection for signaling server communication
   const conn = useRef(null);
@@ -71,6 +74,7 @@ export default function CallScreen({ navigation }) {
   const connectedUser = useRef(null);
   const offerRef = useRef(null);
   const userIdRef = useRef('');
+  const callActiveRef = useRef(false);
 
   /**
    * Check if user is logged in and navigate to login if not
@@ -93,23 +97,34 @@ export default function CallScreen({ navigation }) {
   );
 
   /**
+   * Check permissions and initialize local video if granted
+   * Can be called from multiple places to ensure video is available
+   */
+  const checkPermissionsAndInitVideo = async () => {
+    console.log('🔍 Checking permissions...');
+    const granted = await requestAllPermissions();
+    setPermissionsGranted(granted);
+    permissionsGrantedRef.current = granted;
+    if (granted) {
+      console.log('🎥 Initializing local video...');
+      initLocalVideo();
+      return true;
+    } else {
+      console.log('🚫 Permissions not granted, cannot initialize video');
+      if(Platform.OS === 'web') {
+        window.alert('Camera and microphone permissions are required to make calls');
+      } else {
+        Alert.alert('Permissions Required', 'Camera and microphone permissions are required to make calls');
+      }
+      return false;
+    }
+  };
+
+  /**
    * Initialize camera and microphone permissions and local video stream
    * Runs once when component mounts
    */
   useEffect(() => {
-    const checkPermissionsAndInitVideo = async () => {
-      console.log('Checking permissions...');
-      const granted = await requestAllPermissions();
-      setPermissionsGranted(granted);
-      
-      if (granted) {
-        console.log('Initializing local video...');
-        initLocalVideo();
-      } else {
-        console.log('Permissions not granted, cannot initialize video');
-      }
-    };
-    
     checkPermissionsAndInitVideo();
   }, []);
 
@@ -123,8 +138,14 @@ export default function CallScreen({ navigation }) {
       headerRight: () => (
         <Button mode="text" onPress={onLogout} style={{ paddingRight: 10 }}>Logout</Button>
       ),
-      headerBackVisible: false,
-      headerLeft: null,
+      headerLeft: () => (
+        <IconButton
+          icon="arrow-left"
+          size={24}
+          onPress={onLogout}
+          style={{ marginLeft: 10 }}
+        />
+      ),
     });
   }, [userId, navigation]);
 
@@ -286,6 +307,7 @@ export default function CallScreen({ navigation }) {
    * Creates new peer connection and registers event handlers
    */
   const resetPeer = () => {
+    console.log('🔄 resetPeer called');
     yourConn.current = new RTCPeerConnection({
       iceServers: [
         {
@@ -298,14 +320,22 @@ export default function CallScreen({ navigation }) {
         },
       ],
     });
+    console.log('🆕 New RTCPeerConnection created and assigned to yourConn.current');
     registerPeerEvents();
+    console.log('🔗 Peer events registered');
+
+    console.log('🔐 permissionsGranted (state):', permissionsGranted, '| (ref):', permissionsGrantedRef.current);
+    
+    console.log('🎥 Calling checkPermissionsAndInitVideo from resetPeer');
+    checkPermissionsAndInitVideo();
+    
   };
 
   const fetchAvailableUsers = () => {
     if (conn.current && conn.current.readyState === WebSocket.OPEN) {
       send({
         type: 'activeUsers',
-        sender: userId,
+        sender: userIdRef.current,
       });
     }
   };
@@ -315,7 +345,7 @@ export default function CallScreen({ navigation }) {
    * Creates media stream and adds tracks to peer connection
    */
   const initLocalVideo = () => {
-    console.log('initLocalVideo called, permissionsGranted:', permissionsGranted);
+    console.log('initLocalVideo called, permissionsGranted (state):', permissionsGranted, '| (ref):', permissionsGrantedRef.current);
     
     // Use web-compatible constraints
     const constraints = Platform.OS === 'web' 
@@ -380,29 +410,65 @@ export default function CallScreen({ navigation }) {
   /**
    * Initiate a call to another user
    * Creates and sends offer to signaling server
+   * @param user - Optional user ID to call, defaults to callToUsername
    */
-  const onCall = () => {
-    if (!permissionsGranted) {
-      Alert.alert('Permissions Required', 'Camera and microphone permissions are required to make calls');
+  const startCalling = async (user = callToUsername) => {
+    //if (!permissionsGrantedRef.current) {
+    //  Alert.alert('Permissions Required', 'Camera and microphone permissions are required to make calls');
+    //  return;
+    //}
+    user = (user || '').toString().trim();
+    console.log('user: ', user);
+    console.log('error: ', error);
+    if(user === '') {
+      setError('Please enter a valid user ID');
       return;
     }
-    sendCall(callToUsername);
-    setTimeout(() => {
-      sendCall(callToUsername);
-    }, 1000);
+    if(user === userIdRef.current) {
+      setError('You cannot call yourself');
+      return;
+    }
+    if(user === connectedUser.current) {
+      setError('You are already calling this user');
+      return;
+    }
+    if(callActive) {
+      setError('You are already in a call');
+      return;
+    }
+    if(!socketActive) {
+      setError('WebSocket is not active');
+      return;
+    }
+    
+    setError('');
+    const granted = await checkPermissionsAndInitVideo();
+    if (granted) {
+      sendCallOffer(user);
+      setTimeout(() => {
+        if(!callActiveRef.current) {
+          console.log('Call is not active, sending offer again');
+          sendCallOffer(user);
+        }
+      }, 3000);
+    }
+    
+    return;
+
   };
 
   /**
    * Create and send WebRTC offer to initiate call
    * @param receiverId - The ID of the user to call
    */
-  const sendCall = (receiverId) => {
+  const sendCallOffer = (receiverId) => {
     setCalling(true);
     const otherUser = receiverId;
     connectedUser.current = otherUser;
     console.log('Calling to', otherUser);
+    setOtherId(otherUser);
     
-    // @ts-ignore
+    
     yourConn.current.createOffer().then((offer) => {
       yourConn.current.setLocalDescription(offer).then(() => {
         console.log('Sending Offer');
@@ -431,17 +497,6 @@ export default function CallScreen({ navigation }) {
   };
 
   /**
-   * Reject an incoming call
-   * Sends leave message to signaling server
-   */
-  const rejectCall = async () => {
-    send({
-      type: 'rejectCall',
-    });
-  };
-
-
-  /**
    * Accept an incoming call
    * Creates and sends answer to the calling user
    */
@@ -450,6 +505,7 @@ export default function CallScreen({ navigation }) {
     const offer = offerRef.current.offer;
     setIncomingCall(false);
     setCallActive(true);
+    callActiveRef.current = true;
     console.log('Accepting CALL', name, offer);
     
     try {
@@ -474,6 +530,7 @@ export default function CallScreen({ navigation }) {
   const handleAnswer = (answer) => {
     setCalling(false);
     setCallActive(true);
+    callActiveRef.current = true;
     yourConn.current.setRemoteDescription(new RTCSessionDescription(answer));
   };
 
@@ -501,6 +558,9 @@ export default function CallScreen({ navigation }) {
     setCalling(false);
     setIncomingCall(false);
     setCallActive(false);
+    callActiveRef.current = false;
+    setOtherId('');
+    setCallToUsername('');
     offerRef.current = null;
     connectedUser.current = null;
     setRemoteStream(null);
@@ -514,12 +574,7 @@ export default function CallScreen({ navigation }) {
     yourConn.current.ontrack = null;
 
     resetPeer();
-    if (permissionsGranted) {
-      // Add a small delay to ensure peer is reset before initializing video
-      setTimeout(() => {
-        initLocalVideo();
-      }, 100);
-    }
+    
   };
 
   /**
@@ -541,7 +596,8 @@ export default function CallScreen({ navigation }) {
   const onLogout = () => {
     console.log('🚪 onLogout called');
     handleHangUp();
-    handleLogout();
+    //handleLogout();
+    
     // Close WebSocket connection if it exists
     // conn.current holds our WebSocket connection to the signaling server
     // that handles call setup and peer coordination
@@ -553,15 +609,6 @@ export default function CallScreen({ navigation }) {
     });
   };
 
-  
-  
-
-  
-
-  const handleUserCall = (userName) => {
-    setCallToUsername(userName);
-    //onCall(userName);
-  };
 
   return (
     <View style={styles.root}>
@@ -578,13 +625,19 @@ export default function CallScreen({ navigation }) {
               style={styles.textInput}
               onChangeText={(text) => setCallToUsername(text)}
               value={callToUsername}
+              error={!!error}
             />
-            <Text style={styles.statusText} children={`SOCKET ACTIVE: ${socketActive ? 'TRUE' : 'FALSE'}, FRIEND ID: ${callToUsername || otherId}`} />
+            {error ? (
+              <Text style={styles.errorText}>
+                {error}
+              </Text>
+            ) : null}
+            <Text style={styles.statusText} children={`SOCKET ACTIVE: ${socketActive ? 'TRUE' : 'FALSE'}, FRIEND ID: ${otherId || callToUsername}`} />
             <Text style={[styles.statusText, {color: permissionsGranted ? '#4CAF50' : '#F44336', marginBottom: 10}]} children={`PERMISSIONS: ${permissionsGranted ? 'GRANTED' : 'NOT GRANTED'}`} />
             <View style={styles.buttonContainer}>
               <Button
                 mode="contained"
-                onPress={onCall}
+                onPress={() => startCalling()}
                 loading={calling}
                 contentStyle={styles.btnContent}
                 disabled={!socketActive || callToUsername === '' || callActive || !permissionsGranted}
@@ -609,7 +662,8 @@ export default function CallScreen({ navigation }) {
                   .map((userName, index) => (
                     <TouchableOpacity
                       key={index}
-                      onPress={() => handleUserCall(userName)}
+                      onPress={() => startCalling(userName)}
+                      disabled={!socketActive || callActive || !permissionsGranted || calling}
                       style={styles.gridCardContainer}
                     >
                       <Card style={styles.userCard}>
@@ -618,7 +672,8 @@ export default function CallScreen({ navigation }) {
                           <Button
                             mode="contained"
                             icon="phone"
-                            onPress={() => handleUserCall(userName)}
+                            onPress={() => startCalling(userName)}
+                            disabled={!socketActive || callActive || !permissionsGranted || calling}
                             style={styles.callIcon}
                             compact
                           >
@@ -674,13 +729,29 @@ export default function CallScreen({ navigation }) {
               <Text style={styles.footerSubtext} children="Built with React Native and Expo" />
             </View>
           )}
+          {Platform.OS !== 'web' && (
+            <View style={styles.webFooter}>
+              <Text style={styles.footerText} children="WebRTC Video Call App" />
+              <Text style={styles.footerSubtext} children="Built with React Native and Expo" />
+            </View>
+          )}
         </View>
       </ScrollView>
+
+
+
+      {/* incoming call modal */}
       <Modal isVisible={incomingCall && !callActive}>
         <View style={styles.modalContent}>
           <Text children={`${otherId} is calling you`} />
           <Button onPress={acceptCall} style={{marginTop: 10}} children="Accept Call" />
           <Button onPress={handleHangUp} style={{marginTop: 10}} children="Reject Call" />
+        </View>
+      </Modal>
+      <Modal isVisible={calling}>
+        <View style={styles.modalContent}>
+          <Text children={`Calling ${otherId}...`} />
+          <Button onPress={handleHangUp} style={{marginTop: 10}} children="Cancel Call" />
         </View>
       </Modal>
     </View>
@@ -690,7 +761,7 @@ export default function CallScreen({ navigation }) {
 const styles = StyleSheet.create({
   root: {
     backgroundColor: '#fff',
-    height: Platform.OS === 'web' ? 600 : '100%',
+    height: Platform.OS === 'web' ? '100vh' : '100%',
     padding: Platform.OS === 'web' ? 20 : 20,
   },
   scrollView: {
@@ -714,8 +785,17 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
   },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
   videoContainer: {
     marginBottom: Platform.OS === 'web' ? 30 : 20,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   videos: {
     width: '100%',
@@ -725,15 +805,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     borderWidth: 1,
     borderColor: '#e9ecef',
+    margin: Platform.OS === 'web' ? 10 : 10,
+    
+    minHeight: Platform.OS === 'web' ? 100 : 50,
+    maxHeight: Platform.OS === 'web' ? 500 : 300,
+    minWidth: Platform.OS === 'web' ? 100 : 50,
+    maxWidth: Platform.OS === 'web' ? '100%' : '100%',
   },
   localVideos: {
     //height: Platform.OS === 'web' ? 400 : 350,
-    minHeight: Platform.OS === 'web' ? 300 : 350,
-    marginBottom: Platform.OS === 'web' ? 20 : 15,
+    //minHeight: Platform.OS === 'web' ? 300 : 50,
+    //marginBottom: Platform.OS === 'web' ? 20 : 15,
   },
   remoteVideos: {
     //height: Platform.OS === 'web' ? 400 : 350,
-    minHeight: Platform.OS === 'web' ? 300 : 350,
+    //minHeight: Platform.OS === 'web' ? 300 : 50,
   },
   localVideo: {
     backgroundColor: '#f8f9fa',
@@ -753,8 +839,10 @@ const styles = StyleSheet.create({
     maxWidth: Platform.OS === 'web' ? 500 : '100%',
   },
   modalContent: {
+    maxWidth: Platform.OS === 'web' ? 400 : '100%',
     backgroundColor: 'white',
     padding: 22,
+    alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 4,
@@ -791,6 +879,7 @@ const styles = StyleSheet.create({
   },
   webFooter: {
     marginTop: 40,
+    marginBottom: 40,
     padding: 30,
     backgroundColor: '#f8f9fa',
     borderRadius: 12,

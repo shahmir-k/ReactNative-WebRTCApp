@@ -82,6 +82,7 @@ export default function LoginScreen({navigation}) {
     }
   };
 
+
   return (
     <View style={styles.root}>
       <View style={styles.content}>
@@ -91,11 +92,13 @@ export default function LoginScreen({navigation}) {
         <TextInput
           label="Your ID"
           placeholder="Enter your user ID"
+          autoFocus={true}
           onChangeText={setUserId}
           mode="outlined"
           style={styles.input}
           value={userId}
           error={!!error}
+          onSubmitEditing={onLogin}
         />
 
         {error ? (
