@@ -6,8 +6,10 @@ import React, {useState, useRef} from 'react';
 import {View, StyleSheet, Dimensions, Platform} from 'react-native';
 import {Text, TextInput, Button} from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-const SOCKET_URL = 'ws://192.168.0.132:9090/signal';
+// Get environment variables from Expo config
+const SIGNALING_SERVER_URL = Constants.expoConfig?.extra?.SIGNALING_SERVER_URL;
 
 export default function LoginScreen({navigation}) {
   const [userId, setUserId] = useState('');
@@ -25,8 +27,9 @@ export default function LoginScreen({navigation}) {
     setError('');
 
     try {
-      // Create WebSocket connection
-      const ws = new WebSocket(SOCKET_URL);
+      // Create WebSocket connection using environment variable
+      console.log('SIGNALING_SERVER_URL:', SIGNALING_SERVER_URL);
+      const ws = new WebSocket(SIGNALING_SERVER_URL);
       wsRef.current = ws;
 
       ws.onopen = () => {
