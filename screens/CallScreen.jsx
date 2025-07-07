@@ -15,7 +15,7 @@ import {
   RTCSessionDescription, //used for all platforms
   RTCView, //used for all platforms
   mediaDevices, //used for all platforms
-  
+
   MediaStream, //used, for all platforms
 
   registerGlobals, //not used, for all platforms
@@ -29,6 +29,8 @@ import {
 
 import { requestAllPermissions } from '../utils/permissions';
 import Constants from 'expo-constants';
+
+import { Icon, ActivityIndicator } from 'react-native-paper';
 
 // Get environment variables from Expo config
 const {
@@ -106,14 +108,14 @@ export default function CallScreen({ navigation }) {
   const offerRef = useRef(null);
   const userIdRef = useRef('');
   const callActiveRef = useRef(false);
-  
+
   // ICE candidate queue to handle timing issues
   // This prevents "No remoteDescription" errors by queuing ICE candidates
   // until the remote description is set, which is required before adding candidates
   const iceCandidateQueue = useRef([]);
   // Track whether remote description has been set to know when it's safe to add ICE candidates
   const remoteDescriptionSet = useRef(false);
-  
+
   // Track actual media streams with refs to ensure we can always access them for cleanup
   const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
@@ -156,7 +158,7 @@ export default function CallScreen({ navigation }) {
       return true;
     } else {
       console.log('🚫 Permissions not granted, cannot initialize video');
-      if(Platform.OS === 'web') {
+      if (Platform.OS === 'web') {
         window.alert('Camera and microphone permissions are required to make calls');
       } else {
         Alert.alert('Permissions Required', 'Camera and microphone permissions are required to make calls');
@@ -171,7 +173,7 @@ export default function CallScreen({ navigation }) {
    */
   useEffect(() => {
     checkPermissionsAndInitVideo();
-    
+
     // Cleanup function that runs when component unmounts
     return () => {
       console.log('🔄 Component unmounting - cleaning up media');
@@ -234,7 +236,7 @@ export default function CallScreen({ navigation }) {
       console.log('🔗 Reusing WebSocket connection from login');
       conn.current = global.loginWebSocket;
       global.loginWebSocket = null; // Clear the global reference
-      
+
       // If the reused WebSocket is already connected, set socketActive immediately
       if (conn.current.readyState === WebSocket.OPEN) {
         console.log('🔗 Reused WebSocket is already connected');
@@ -410,12 +412,12 @@ export default function CallScreen({ navigation }) {
    */
   const resetPeer = (restartVideo = false) => {
     console.log('🔄 resetPeer called');
-    
+
     // Reset ICE candidate handling state for the new peer connection
     // This ensures we start fresh with each new call attempt
     iceCandidateQueue.current = [];
     remoteDescriptionSet.current = false;
-    
+
     yourConn.current = new RTCPeerConnection({
       iceServers: ICE_SERVERS, // Use the enhanced ICE server configuration
       iceCandidatePoolSize: parseInt(ICE_CANDIDATE_POOL_SIZE), // Pre-gather more ICE candidates for faster connection establishment
@@ -426,7 +428,7 @@ export default function CallScreen({ navigation }) {
     console.log('🆕 New RTCPeerConnection created and assigned to yourConn.current');
     registerPeerEvents();
     console.log('🔗 Peer events registered');
-    
+
   };
 
   const fetchAvailableUsers = () => {
@@ -444,30 +446,30 @@ export default function CallScreen({ navigation }) {
    */
   const initLocalVideo = () => {
     console.log('🎥 initLocalVideo CALLED: permissionsGranted (state):', permissionsGranted, '| (ref):', permissionsGrantedRef.current);
-    
+
     // Use web-compatible constraints
-    const constraints = Platform.OS === 'web' 
+    const constraints = Platform.OS === 'web'
       ? {
-          audio: true,
-          video: {
-            width: { min: 500, ideal: 1280, max: 1920 },
-            height: { min: 300, ideal: 720, max: 1080 },
-            frameRate: { min: 30, ideal: 30 },
-            facingMode: 'user'
-          }
+        audio: true,
+        video: {
+          width: { min: 500, ideal: 1280, max: 1920 },
+          height: { min: 300, ideal: 720, max: 1080 },
+          frameRate: { min: 30, ideal: 30 },
+          facingMode: 'user'
         }
+      }
       : {
-          audio: true,
-          video: {
-            // Native React Native WebRTC constraints
-            mandatory: {
-              minWidth: 500,
-              minHeight: 300,
-              minFrameRate: 30,
-            },
-            facingMode: 'user',
+        audio: true,
+        video: {
+          // Native React Native WebRTC constraints
+          mandatory: {
+            minWidth: 500,
+            minHeight: 300,
+            minFrameRate: 30,
           },
-        };
+          facingMode: 'user',
+        },
+      };
 
     console.log('Getting user media with constraints:', constraints);
 
@@ -507,7 +509,7 @@ export default function CallScreen({ navigation }) {
       console.log('❌ WebSocket not connected, cannot send message');
       return;
     }
-    
+
     // Ensure sender field is always present
     if (!message.sender) {
       message.sender = userIdRef.current;
@@ -529,32 +531,32 @@ export default function CallScreen({ navigation }) {
     user = (user || '').toString().trim();
     console.log('user: ', user);
     console.log('error: ', error);
-    if(user === '') {
+    if (user === '') {
       setError('Please enter a valid user ID');
       return;
     }
-    if(user === userIdRef.current) {
+    if (user === userIdRef.current) {
       setError('You cannot call yourself');
       return;
     }
-    if(user === connectedUser.current) {
+    if (user === connectedUser.current) {
       setError('You are already calling this user');
       return;
     }
-    if(callActive) {
+    if (callActive) {
       setError('You are already in a call');
       return;
     }
-    if(!socketActive) {
+    if (!socketActive) {
       setError('WebSocket is not active');
       return;
     }
-    
+
     setError('');
     const granted = await checkPermissionsAndInitVideo();
     if (granted) {
       sendCallOffer(user);
-      
+
       // Set up connection timeout to handle cases where the remote user doesn't respond
       // This prevents the call from hanging indefinitely
       const connectionTimeout = setTimeout(() => {
@@ -565,7 +567,7 @@ export default function CallScreen({ navigation }) {
           handleHangUp();
         }
       }, 30000); // 30 second timeout
-      
+
       // Clear timeout when call becomes active to prevent false timeouts
       const checkCallActive = setInterval(() => {
         if (callActiveRef.current) {
@@ -573,13 +575,13 @@ export default function CallScreen({ navigation }) {
           clearInterval(checkCallActive);
         }
       }, 1000);
-      
+
       // Clean up interval after 35 seconds to prevent memory leaks
       setTimeout(() => {
         clearInterval(checkCallActive);
       }, 35000);
     }
-    
+
     return;
 
   };
@@ -594,8 +596,8 @@ export default function CallScreen({ navigation }) {
     connectedUser.current = otherUser;
     console.log('Calling to', otherUser);
     setOtherId(otherUser);
-    
-    
+
+
     yourConn.current.createOffer().then((offer) => {
       yourConn.current.setLocalDescription(offer).then(() => {
         console.log('Sending Offer');
@@ -617,7 +619,7 @@ export default function CallScreen({ navigation }) {
   const handleOffer = async (offer, name) => {
     console.log(name + ' is calling you.');
     connectedUser.current = name;
-    offerRef.current = {name, offer};
+    offerRef.current = { name, offer };
     setIncomingCall(true);
     setOtherId(name);
     if (callActive) acceptCall();
@@ -634,18 +636,18 @@ export default function CallScreen({ navigation }) {
     setCallActive(true);
     callActiveRef.current = true;
     console.log('Accepting CALL', name, offer);
-    
+
     try {
       await yourConn.current.setRemoteDescription(offer);
       // Mark that remote description is set so we can safely add ICE candidates
       remoteDescriptionSet.current = true;
-      
+
       // Process any queued ICE candidates that arrived before we set the remote description
       while (iceCandidateQueue.current.length > 0) {
         const candidate = iceCandidateQueue.current.shift();
         await yourConn.current.addIceCandidate(new RTCIceCandidate(candidate));
       }
-      
+
       const answer = await yourConn.current.createAnswer();
       await yourConn.current.setLocalDescription(answer);
       send({
@@ -687,7 +689,7 @@ export default function CallScreen({ navigation }) {
    */
   const handleCandidate = (candidate) => {
     setCalling(false);
-    
+
     // If remote description is not set yet, queue the candidate
     // This prevents "No remoteDescription" errors that occur when ICE candidates
     // arrive before the SDP offer/answer exchange is complete
@@ -696,7 +698,7 @@ export default function CallScreen({ navigation }) {
       iceCandidateQueue.current.push(candidate);
       return;
     }
-    
+
     // Otherwise, add the candidate immediately since remote description is set
     yourConn.current.addIceCandidate(new RTCIceCandidate(candidate))
       .catch(err => console.log('Error adding ICE candidate:', err));
@@ -710,9 +712,9 @@ export default function CallScreen({ navigation }) {
     // Use provided streams or fall back to refs, then state
     const currentLocal = localStreamToCheck || localStreamRef.current || localStream;
     const currentRemote = remoteStreamToCheck || remoteStreamRef.current || remoteStream;
-    
+
     let hasActiveTracks = false;
-    
+
     if (currentLocal) {
       const tracks = currentLocal.getTracks();
       tracks.forEach(track => {
@@ -722,7 +724,7 @@ export default function CallScreen({ navigation }) {
         }
       });
     }
-    
+
     if (currentRemote) {
       const tracks = currentRemote.getTracks();
       tracks.forEach(track => {
@@ -732,7 +734,7 @@ export default function CallScreen({ navigation }) {
         }
       });
     }
-    
+
     return hasActiveTracks;
   };
 
@@ -742,13 +744,13 @@ export default function CallScreen({ navigation }) {
    */
   const stopAllMediaGlobally = () => {
     if (Platform.OS !== 'web') return;
-    
+
     console.log('🌐 Stopping all media streams globally (web)');
-    
+
     // Get streams from refs first, then fall back to state
     const currentLocalStream = localStreamRef.current || localStream;
     const currentRemoteStream = remoteStreamRef.current || remoteStream;
-    
+
     // Stop all tracks from our known streams
     if (currentLocalStream) {
       const tracks = currentLocalStream.getTracks();
@@ -757,7 +759,7 @@ export default function CallScreen({ navigation }) {
         track.stop();
       });
     }
-    
+
     if (currentRemoteStream) {
       const tracks = currentRemoteStream.getTracks();
       tracks.forEach(track => {
@@ -765,7 +767,7 @@ export default function CallScreen({ navigation }) {
         track.stop();
       });
     }
-    
+
     // Also try to stop any active streams from getUserMedia
     try {
       navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -791,11 +793,11 @@ export default function CallScreen({ navigation }) {
    */
   const forceStopAllMedia = () => {
     console.log('🛑 Force stopping all media streams');
-    
+
     // Get streams from refs first, then fall back to state
     const currentLocalStream = localStreamRef.current || localStream;
     const currentRemoteStream = remoteStreamRef.current || remoteStream;
-    
+
     // Force stop all tracks from our known streams
     if (currentLocalStream) {
       const tracks = currentLocalStream.getTracks();
@@ -806,7 +808,7 @@ export default function CallScreen({ navigation }) {
         }
       });
     }
-    
+
     if (currentRemoteStream) {
       const tracks = currentRemoteStream.getTracks();
       tracks.forEach(track => {
@@ -816,7 +818,7 @@ export default function CallScreen({ navigation }) {
         }
       });
     }
-    
+
     // Try to find and stop any remaining streams
     if (Platform.OS === 'web') {
       try {
@@ -844,20 +846,20 @@ export default function CallScreen({ navigation }) {
    */
   const cleanupAllMedia = () => {
     console.log('🧹 Starting comprehensive media cleanup');
-    
+
     // Check if media is active before cleanup
     const wasActive = checkAllMediaActive(localStream, remoteStream);
     if (wasActive) {
       console.log('📹 Media was active - performing cleanup');
     }
-    
+
     // Capture the current streams from refs (more reliable than state)
     const currentLocalStream = localStreamRef.current || localStream;
     const currentRemoteStream = remoteStreamRef.current || remoteStream;
-    
+
     console.log('📹 Current local stream (ref):', currentLocalStream ? 'exists' : 'null');
     console.log('📹 Current remote stream (ref):', currentRemoteStream ? 'exists' : 'null');
-    
+
     // First, remove all tracks from the peer connection
     if (yourConn.current) {
       console.log('🔌 Removing tracks from peer connection');
@@ -874,7 +876,7 @@ export default function CallScreen({ navigation }) {
         console.log('⚠️ Error removing tracks from peer connection:', err);
       }
     }
-    
+
     // Stop all local stream tracks (camera and microphone)
     if (currentLocalStream) {
       console.log('📹 Stopping local stream tracks');
@@ -888,7 +890,7 @@ export default function CallScreen({ navigation }) {
     } else {
       console.log('⚠️ No local stream found to stop');
     }
-    
+
     // Stop all remote stream tracks
     if (currentRemoteStream) {
       console.log('📹 Stopping remote stream tracks');
@@ -902,13 +904,13 @@ export default function CallScreen({ navigation }) {
     } else {
       console.log('⚠️ No remote stream found to stop');
     }
-    
+
     // Try global media cleanup (web-specific)
     stopAllMediaGlobally();
-    
+
     // Force stop all media as a final measure
     forceStopAllMedia();
-    
+
     // Close the peer connection and remove all event handlers
     if (yourConn.current) {
       console.log('🔌 Closing peer connection');
@@ -922,7 +924,7 @@ export default function CallScreen({ navigation }) {
       yourConn.current.close();
     }
     yourConn.current = null;
-    
+
     // Reset all call-related state
     setCalling(false);
     setIncomingCall(false);
@@ -933,18 +935,18 @@ export default function CallScreen({ navigation }) {
     setError('');
     offerRef.current = null;
     connectedUser.current = null;
-    
+
     // Reset ICE candidate handling state
     iceCandidateQueue.current = [];
     remoteDescriptionSet.current = false;
-    
+
     // Set streams to null after stopping tracks
     setLocalStream(null);
     setLocalPreviewStream(null);
     setRemoteStream(null);
     localStreamRef.current = null;
     remoteStreamRef.current = null;
-    
+
     // Verify cleanup was successful
     if (true) {
       setTimeout(() => {
@@ -971,7 +973,7 @@ export default function CallScreen({ navigation }) {
         } else {
           console.log('✅ Media cleanup verification successful - all tracks stopped');
         }
-        
+
         // Final verification - check if we can still access camera (should fail if properly stopped)
         if (Platform.OS === 'web') {
           setTimeout(() => {
@@ -1025,7 +1027,7 @@ export default function CallScreen({ navigation }) {
     yourConn.current.onicecandidate = null;
     yourConn.current.onaddstream = null;
     yourConn.current.ontrack = null;
-    
+
     // Create a new peer connection for future calls
     resetPeer();
     checkPermissionsAndInitVideo();
@@ -1049,7 +1051,7 @@ export default function CallScreen({ navigation }) {
    */
   const onLogout = () => {
     console.log('🚪 onLogout called - starting comprehensive cleanup');
-    
+
     // First, send hangup message if in a call
     if (callActiveRef.current || true) {
       send({
@@ -1058,14 +1060,14 @@ export default function CallScreen({ navigation }) {
         receiver: connectedUser.current,
       });
     }
-    
-    
+
+
     // Send leave message to notify server
     // dont send leave message it is deprecated handleLogout();
-    
+
     // Perform comprehensive media cleanup
     cleanupAllMedia();
-    
+
     // Close WebSocket connection if it exists
     // conn.current holds our WebSocket connection to the signaling server
     // that handles call setup and peer coordination
@@ -1076,7 +1078,7 @@ export default function CallScreen({ navigation }) {
       conn.current.close();
       conn.current = null;
     }
-    
+
     // Remove user ID from storage and navigate to login
     AsyncStorage.removeItem('userId').then((res) => {
       console.log('✅ Logout completed - navigating to login');
@@ -1087,8 +1089,8 @@ export default function CallScreen({ navigation }) {
 
   return (
     <View style={styles.root}>
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={Platform.OS === 'web'}
       >
@@ -1108,7 +1110,7 @@ export default function CallScreen({ navigation }) {
               </Text>
             ) : null}
             <Text style={styles.statusText} children={`SOCKET ACTIVE: ${socketActive ? 'TRUE' : 'FALSE'}, FRIEND ID: ${otherId || callToUsername}`} />
-            <Text style={[styles.statusText, {color: permissionsGranted ? '#4CAF50' : '#F44336', marginBottom: 10}]} children={`PERMISSIONS: ${permissionsGranted ? 'GRANTED' : 'NOT GRANTED'}`} />
+            <Text style={[styles.statusText, { color: permissionsGranted ? '#4CAF50' : '#F44336', marginBottom: 10 }]} children={`PERMISSIONS: ${permissionsGranted ? 'GRANTED' : 'NOT GRANTED'}`} />
             <View style={styles.buttonContainer}>
               <Button
                 mode="contained"
@@ -1160,7 +1162,7 @@ export default function CallScreen({ navigation }) {
                   ))}
               </View>
             ) : (
-              <Text style={[styles.statusText, {textAlign: 'center'}]}>
+              <Text style={[styles.statusText, { textAlign: 'center' }]}>
                 No other users available
               </Text>
             )}
@@ -1177,7 +1179,7 @@ export default function CallScreen({ navigation }) {
               ) : (
                 <View style={[styles.localVideo, styles.noVideoContainer]}>
                   <Text style={styles.noVideoText} children="No local video stream" />
-                  <Text style={[styles.noVideoText, {fontSize: 12}]} children={`Permissions: ${permissionsGranted ? 'Granted' : 'Not Granted'}`} />
+                  <Text style={[styles.noVideoText, { fontSize: 12 }]} children={`Permissions: ${permissionsGranted ? 'Granted' : 'Not Granted'}`} />
                 </View>
               )}
             </View>
@@ -1196,7 +1198,7 @@ export default function CallScreen({ navigation }) {
               )}
             </View>
           </View>
-          
+
           {/* Web-specific content for better scrolling experience */}
           {Platform.OS === 'web' && (
             <View style={styles.webFooter}>
@@ -1218,15 +1220,67 @@ export default function CallScreen({ navigation }) {
       {/* incoming call modal */}
       <Modal isVisible={incomingCall && !callActive}>
         <View style={styles.modalContent}>
+
+          <Icon
+            source="account-circle"
+            size={104}
+            color="#c4dcff"
+          />
+
           <Text children={`${otherId} is calling you`} />
-          <Button onPress={acceptCall} style={{marginTop: 10}} children="Accept Call" />
-          <Button onPress={handleHangUp} style={{marginTop: 10}} children="Reject Call" />
+
+          <ActivityIndicator animating={true} color="#5166EC" size={50} style={styles.loadingIndicator} />
+
+          <View style={styles.callContainer}>
+            {/* <Button onPress={acceptCall} style={styles.finalCallButton} icon="phone" /> */}
+
+            <TouchableOpacity
+              onPress={acceptCall} style={styles.finalAcceptCallButton}
+            >
+              <Icon
+                source="phone"
+                size={54}
+                color="#FFF"
+              />
+            </TouchableOpacity>
+
+            {/* <Button onPress={handleHangUp} style={styles.finalHangupCallButton} icon="phone-hangup" /> */}
+
+            <TouchableOpacity
+              onPress={handleHangUp} style={styles.finalHangupCallButton}
+            >
+              <Icon
+                source="phone-hangup"
+                size={54}
+                color="#FFF"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
       <Modal isVisible={calling}>
-        <View style={styles.modalContent}>
+        <View style={styles.modalContentCall}>
+
+          <Icon
+            source="account-circle"
+            size={104}
+            color="#c4dcff"
+          />
+
           <Text children={`Calling ${otherId}...`} />
-          <Button onPress={handleHangUp} style={{marginTop: 10}} children="Cancel Call" />
+
+          <ActivityIndicator animating={true} color="#5166EC" size={50} style={styles.loadingIndicator} />
+
+          {/* <Button onPress={handleHangUp} style={styles.finalHangupCallButton} icon="phone-hangup" /> */}
+          <TouchableOpacity
+            onPress={handleHangUp} style={styles.finalHangupCallButton}
+          >
+            <Icon
+              source="phone-hangup"
+              size={54}
+              color="#FFF"
+            />
+          </TouchableOpacity>
         </View>
       </Modal>
     </View>
@@ -1281,7 +1335,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e9ecef',
     margin: Platform.OS === 'web' ? 10 : 10,
-    
+
     minHeight: Platform.OS === 'web' ? 100 : 50,
     maxHeight: Platform.OS === 'web' ? 500 : 300,
     minWidth: Platform.OS === 'web' ? 100 : 50,
@@ -1315,8 +1369,19 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     maxWidth: Platform.OS === 'web' ? 400 : '100%',
-    backgroundColor: 'white',
-    padding: 22,
+    backgroundColor: '#00132e',
+    padding: 32,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 4,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  modalContentCall: {
+    maxWidth: Platform.OS === 'web' ? 400 : '100%',
+    backgroundColor: '#00132e',
+    paddingVertical: 32,
+    paddingHorizontal: 80,
     alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1444,5 +1509,29 @@ const styles = StyleSheet.create({
     width: 120,
     marginBottom: 10,
     marginHorizontal: 5,
+  },
+  callContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 10,
+  },
+  finalAcceptCallButton: {
+    backgroundColor: "#5166EC",
+    padding: 10,
+    borderRadius: 50,
+    marginRight: 10,
+    marginLeft: 10,
+  },
+  finalHangupCallButton: {
+    backgroundColor: "#F44336",
+    padding: 10,
+    borderRadius: 50,
+    marginRight: 10,
+    marginLeft: 10,
+  },
+  loadingIndicator: {
+    marginTop: 20,
+    marginBottom: 20,
   },
 }); 

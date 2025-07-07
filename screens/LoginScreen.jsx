@@ -2,16 +2,17 @@
 // Github: https://github.com/shahmir-k
 // LinkedIn: https://www.linkedin.com/in/shahmir-k
 
-import React, {useState, useRef} from 'react';
-import {View, StyleSheet, Dimensions, Platform} from 'react-native';
-import {Text, TextInput, Button} from 'react-native-paper';
+import React, { useState, useRef, use, useEffect } from 'react';
+import { View, StyleSheet, Dimensions, Platform } from 'react-native';
+import { Text, TextInput, Button } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
 // Get environment variables from Expo config
-const SIGNALING_SERVER_URL = Constants.expoConfig?.extra?.SIGNALING_SERVER_URL;
+// const SIGNALING_SERVER_URL = Constants.expoConfig?.extra?.SIGNALING_SERVER_URL;
+const SIGNALING_SERVER_URL = process.env.SIGNALING_SERVER_URL || 'ws://192.168.1.107:9090/signal';
 
-export default function LoginScreen({navigation}) {
+export default function LoginScreen({ navigation }) {
   const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -44,7 +45,7 @@ export default function LoginScreen({navigation}) {
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         console.log('📨 Received login response:', data);
-        
+
         if (data.type === 'join') {
           if (data.data && data.data.result === true) {
             // Join successful, save user ID and navigate
