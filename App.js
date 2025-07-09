@@ -30,6 +30,7 @@ import { Provider as PaperProvider } from 'react-native-paper';
 
 import LoginScreen from './screens/LoginScreen';
 import CallScreen from './screens/CallScreen';
+import CallStart from './screens/CallStart';
 
 const Stack = createStackNavigator();
 
@@ -43,8 +44,13 @@ const App = () => (
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="Call"
+          name="CallSetup"
           component={CallScreen}
+        />
+        <Stack.Screen
+          name="CallStart"
+          component={CallStart}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

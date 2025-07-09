@@ -54,7 +54,7 @@ export default function LoginScreen({ navigation }) {
               setLoading(false);
               // Store the WebSocket connection for CallScreen to use
               global.loginWebSocket = ws;
-              navigation.navigate('Call');
+              navigation.navigate('CallSetup');
             });
           } else {
             // Join failed (user ID already taken)
