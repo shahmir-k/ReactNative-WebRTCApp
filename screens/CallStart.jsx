@@ -1,6 +1,5 @@
-import { Text, View } from 'react-native'
-import React, { Component } from 'react'
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+// import { Text, View } from 'react-native'
+import React, { Component, useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, Alert, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Button, TextInput, Card, IconButton } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -34,7 +33,19 @@ import { Icon, ActivityIndicator } from 'react-native-paper';
 
 const CallStart = ({ navigation, route }) => {
 
-    const { localPreviewStream, remoteStream } = route.params;
+    // const { localPreviewStream, remoteStream, userIdRef, connectedUserId} = route.params;
+    const { localPreviewStream, remoteStream, handleHangUp } = route.params;
+
+    useEffect(() => {
+        if (!localPreviewStream || !remoteStream) {
+            Alert.alert("Call has ended");
+            navigation.goBack();
+        }
+    }, []);
+
+    useEffect(() => {
+        console.log("CallStart props:", route.params);
+    }, []);
 
     return (
         <View>
@@ -70,9 +81,76 @@ const CallStart = ({ navigation, route }) => {
                 )}
             </View>
 
+            <Button
+                mode="contained"
+                onPress={() => {
+                    // Alert.alert("Call Ended", "You have ended the call.");
+                    // send({
+                    //     type: 'hangUp',
+                    //     sender: userIdRef.current,
+                    //     receiver: connectedUserId.current,
+                    // });
+                    if (handleHangUp) handleHangUp();
+                    navigation.goBack();
+                }}
+            >
+                <Text children="End Call" />
+            </Button>
+
 
         </View>
     )
 }
+
+const styles = StyleSheet.create({
+    videos: {
+        width: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: 12,
+        backgroundColor: '#f8f9fa',
+        borderWidth: 1,
+        borderColor: '#e9ecef',
+        margin: Platform.OS === 'web' ? 10 : 10,
+
+        minHeight: Platform.OS === 'web' ? 100 : 50,
+        maxHeight: Platform.OS === 'web' ? 500 : 300,
+        minWidth: Platform.OS === 'web' ? 100 : 50,
+        maxWidth: Platform.OS === 'web' ? '100%' : '100%',
+    },
+    localVideos: {
+        height: Platform.OS === 'web' ? 400 : 350,
+        minHeight: Platform.OS === 'web' ? 300 : 50,
+        marginBottom: Platform.OS === 'web' ? 20 : 15,
+    },
+    remoteVideos: {
+        height: Platform.OS === 'web' ? 400 : 350,
+        minHeight: Platform.OS === 'web' ? 300 : 50,
+    },
+    localVideo: {
+        backgroundColor: '#f8f9fa',
+        height: '100%',
+        width: '100%',
+    },
+    remoteVideo: {
+        backgroundColor: '#f8f9fa',
+        height: '100%',
+        width: '100%',
+    },
+    videoLabel: {
+        margin: 8,
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333',
+    },
+    noVideoContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+    },
+    noVideoText: {
+        color: '#888',
+    },
+});
 
 export default CallStart;

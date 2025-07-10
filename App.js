@@ -27,6 +27,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Provider as PaperProvider } from 'react-native-paper';
+import { CallProvider } from './contexts/CallContext.js';
 
 import LoginScreen from './screens/LoginScreen';
 import CallScreen from './screens/CallScreen';
@@ -37,22 +38,26 @@ const Stack = createStackNavigator();
 const App = () => (
   <PaperProvider>
     <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="CallSetup"
-          component={CallScreen}
-        />
-        <Stack.Screen
-          name="CallStart"
-          component={CallStart}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
+      <CallProvider>
+
+        <Stack.Navigator>
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="CallSetup"
+            component={CallScreen}
+          />
+          <Stack.Screen
+            name="CallStart"
+            component={CallStart}
+            options={{ headerShown: false }}
+          />
+        </Stack.Navigator>
+
+      </CallProvider>
     </NavigationContainer>
   </PaperProvider>
 );

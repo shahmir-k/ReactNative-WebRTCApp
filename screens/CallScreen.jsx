@@ -32,6 +32,8 @@ import Constants from 'expo-constants';
 
 import { Icon, ActivityIndicator } from 'react-native-paper';
 
+import { useCall } from '../contexts/CallContext';
+
 // Get environment variables from Expo config
 const {
   SIGNALING_SERVER_URL,
@@ -74,15 +76,36 @@ const ICE_SERVERS = [
 ];
 
 export default function CallScreen({ navigation }) {
+
+  const { localStream, setLocalStream,
+    remoteStream, setRemoteStream,
+    localPreviewStream, setLocalPreviewStream,
+    callActive, setCallActive,
+    calling, setCalling,
+    incomingCall, setIncomingCall,
+    otherId, setOtherId,
+    userId, setUserId,
+    error, setError,
+
+    userIdRef,
+    connectedUser,
+    callActiveRef,
+    localStreamRef,
+    remoteStreamRef,
+    offerRef,
+
+
+  } = useCall();
+
   // State management for user interface and call status
-  const [userId, setUserId] = useState('');
+  // const [userId, setUserId] = useState('');
   const [socketActive, setSocketActive] = useState(false);
-  const [calling, setCalling] = useState(false);
-  const [localStream, setLocalStream] = useState(null);
-  const [remoteStream, setRemoteStream] = useState(null);
+  // const [calling, setCalling] = useState(false);
+  // const [localStream, setLocalStream] = useState(null);
+  // const [remoteStream, setRemoteStream] = useState(null);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const permissionsGrantedRef = useRef(false);
-  const [error, setError] = useState('');
+  // const [error, setError] = useState('');
 
   // WebSocket connection for signaling server communication
   const conn = useRef(null);
@@ -99,15 +122,15 @@ export default function CallScreen({ navigation }) {
   );
 
   // Call state management
-  const [callActive, setCallActive] = useState(false);
-  const [incomingCall, setIncomingCall] = useState(false);
-  const [otherId, setOtherId] = useState('');
+  // const [callActive, setCallActive] = useState(false);
+  // const [incomingCall, setIncomingCall] = useState(false);
+  // const [otherId, setOtherId] = useState('');
   const [callToUsername, setCallToUsername] = useState('');
   const [availableUsers, setAvailableUsers] = useState([]);
-  const connectedUser = useRef(null);
-  const offerRef = useRef(null);
-  const userIdRef = useRef('');
-  const callActiveRef = useRef(false);
+  // const connectedUser = useRef(null);
+  // const offerRef = useRef(null);
+  // const userIdRef = useRef('');
+  // const callActiveRef = useRef(false);
 
   // ICE candidate queue to handle timing issues
   // This prevents "No remoteDescription" errors by queuing ICE candidates
@@ -117,11 +140,11 @@ export default function CallScreen({ navigation }) {
   const remoteDescriptionSet = useRef(false);
 
   // Track actual media streams with refs to ensure we can always access them for cleanup
-  const localStreamRef = useRef(null);
-  const remoteStreamRef = useRef(null);
+  // const localStreamRef = useRef(null);
+  // const remoteStreamRef = useRef(null);
 
   // Added for local preview
-  const [localPreviewStream, setLocalPreviewStream] = useState(null);
+  // const [localPreviewStream, setLocalPreviewStream] = useState(null);
 
   /**
    * Check if user is logged in and navigate to login if not
@@ -134,6 +157,7 @@ export default function CallScreen({ navigation }) {
         if (id) {
           setUserId(id);
           userIdRef.current = id; // Update ref when userId changes
+          handleHangUp(); // Ensure we clean up any previous call state
         } else {
           setUserId('');
           userIdRef.current = '';
@@ -1086,6 +1110,67 @@ export default function CallScreen({ navigation }) {
     });
   };
 
+  useEffect(() => {
+    if (localPreviewStream && remoteStream && callActive) {
+      // navigation.navigate('CallStart', {
+      //   localPreviewStream,
+      //   remoteStream,
+      //   handleHangUp,
+      //   // You can pass other params if needed (e.g., userIdRef, connectedUser)
+      // });
+    }
+  }, [localPreviewStream, remoteStream, callActive, navigation]);
+
+
+  // const {
+  //   userId, setUserId,
+  //   socketActive, setSocketActive,
+  //   calling, setCalling,
+  //   localStream, setLocalStream,
+  //   remoteStream, setRemoteStream,
+  //   localPreviewStream, setLocalPreviewStream,
+  //   permissionsGranted, setPermissionsGranted,
+  //   callActive, setCallActive,
+  //   incomingCall, setIncomingCall,
+  //   otherId, setOtherId,
+  //   callToUsername, setCallToUsername,
+  //   availableUsers, setAvailableUsers,
+  //   error, setError,
+
+  //   // Refs
+  //   conn,
+  //   yourConn,
+  //   userIdRef,
+  //   connectedUser,
+  //   offerRef,
+  //   callActiveRef,
+  //   iceCandidateQueue,
+  //   remoteDescriptionSet,
+  //   localStreamRef,
+  //   remoteStreamRef,
+  //   permissionsGrantedRef,
+
+  //   // Functions
+  //   checkPermissionsAndInitVideo,
+  //   initLocalVideo,
+  //   registerPeerEvents,
+  //   fetchAvailableUsers,
+  //   resetPeer,
+  //   send,
+  //   startCalling,
+  //   sendCallOffer,
+  //   handleOffer,
+  //   acceptCall,
+  //   handleAnswer,
+  //   handleCandidate,
+  //   checkAllMediaActive,
+  //   stopAllMediaGlobally,
+  //   forceStopAllMedia,
+  //   cleanupAllMedia,
+  //   handleHangUp,
+  //   handleLogout,
+  //   onLogout,
+  // } = useCall();
 
   return (
     <View style={styles.root}>
