@@ -1149,6 +1149,7 @@ export default function CallScreen({ navigation }) {
       //   handleHangUp,
       //   // You can pass other params if needed (e.g., userIdRef, connectedUser)
       // });
+      navigation.navigate('CallStart');
     }
   }, [localPreviewStream, remoteStream, callActive, navigation]);
 

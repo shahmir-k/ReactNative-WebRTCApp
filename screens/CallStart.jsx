@@ -29,23 +29,102 @@ import Constants from 'expo-constants';
 
 import { Icon, ActivityIndicator } from 'react-native-paper';
 
+import { useCall } from '../contexts/CallContext';
+
+const {
+    SIGNALING_SERVER_URL,
+    STUN_SERVER_URL,
+    TURN_SERVER_URL,
+    TURN_SERVER_TCP_URL,
+    TURN_SERVER_TLS_URL,
+    TURN_USERNAME,
+    TURN_CREDENTIAL,
+    ICE_CANDIDATE_POOL_SIZE,
+    BUNDLE_POLICY,
+    RTCP_MUX_POLICY,
+    ICE_TRANSPORT_POLICY
+} = Constants.expoConfig?.extra || {};
+
+// ICE server configuration using environment variables
+const ICE_SERVERS = [
+    // Primary STUN server for local network discovery
+    {
+        urls: STUN_SERVER_URL,
+    },
+    // TURN UDP
+    {
+        urls: TURN_SERVER_URL,
+        username: TURN_USERNAME,
+        credential: TURN_CREDENTIAL,
+    },
+    // TURN TCP
+    {
+        urls: TURN_SERVER_TCP_URL,
+        username: TURN_USERNAME,
+        credential: TURN_CREDENTIAL,
+    },
+    // TURN TLS
+    {
+        urls: TURN_SERVER_TLS_URL,
+        username: TURN_USERNAME,
+        credential: TURN_CREDENTIAL,
+    },
+];
+
 
 
 const CallStart = ({ navigation, route }) => {
 
-    // const { localPreviewStream, remoteStream, userIdRef, connectedUserId} = route.params;
-    const { localPreviewStream, remoteStream, handleHangUp } = route.params;
+    const {
+        userId, setUserId,
+        socketActive, setSocketActive,
+        calling, setCalling,
+        localStream, setLocalStream,
+        remoteStream, setRemoteStream,
+        permissionsGranted, setPermissionsGranted,
+        permissionsGrantedRef,
+        error, setError,
 
-    useEffect(() => {
-        if (!localPreviewStream || !remoteStream) {
-            Alert.alert("Call has ended");
-            navigation.goBack();
-        }
-    }, []);
+        conn,
+        yourConn,
 
-    useEffect(() => {
-        console.log("CallStart props:", route.params);
-    }, []);
+        callActive, setCallActive,
+        incomingCall, setIncomingCall,
+        otherId, setOtherId,
+        callToUsername, setCallToUsername,
+        availableUsers, setAvailableUsers,
+        connectedUser,
+        offerRef,
+        userIdRef,
+        callActiveRef,
+
+        iceCandidateQueue,
+        remoteDescriptionSet,
+        localStreamRef,
+        remoteStreamRef,
+
+        localPreviewStream, setLocalPreviewStream,
+
+        checkPermissionsAndInitVideo,
+        registerPeerEvents,
+        resetPeer,
+        fetchAvailableUsers,
+        initLocalVideo,
+        send,
+        startCalling,
+        sendCallOffer,
+        handleOffer,
+        acceptCall,
+        handleAnswer,
+        handleCandidate,
+        checkAllMediaActive,
+        stopAllMediaGlobally,
+        forceStopAllMedia,
+        cleanupAllMedia,
+        handleHangUp,
+        handleLogout,
+
+    } = useCall();
 
     return (
         <View>
@@ -90,7 +169,7 @@ const CallStart = ({ navigation, route }) => {
                     //     sender: userIdRef.current,
                     //     receiver: connectedUserId.current,
                     // });
-                    if (handleHangUp) handleHangUp();
+                    handleHangUp();
                     navigation.goBack();
                 }}
             >
