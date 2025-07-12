@@ -71,7 +71,11 @@ const ICE_SERVERS = [
     },
 ];
 
+const highUserVideoWidth = Platform.OS === 'web' ? 550 : 320;
+const highUserVideoHeight = Platform.OS === 'web' ? '100' : '100';
 
+const lowUserVideoWidth = Platform.OS === 'web' ? 850 : 160;
+const lowUserVideoHeight = Platform.OS === 'web' ? '100' : '100';
 
 const CallStart = ({ navigation, route }) => {
 
@@ -126,27 +130,22 @@ const CallStart = ({ navigation, route }) => {
 
     } = useCall();
 
-    return (
-        <View>
+    const [otherCallNum, setOtherCallNum] = useState(1);
 
-            <View style={[styles.videos, styles.localVideos]}>
-                <Text style={styles.videoLabel} children="Your Video" />
-                {localPreviewStream ? (
-                    <RTCView
-                        stream={localPreviewStream}
-                        style={styles.localVideo}
-                        objectfit="cover"
-                    />
-                ) : (
-                    <View style={[styles.localVideo, styles.noVideoContainer]}>
-                        <Text style={styles.noVideoText} children="No local video stream" />
-                        <Text style={[styles.noVideoText, { fontSize: 12 }]} children={`Permissions: ${permissionsGranted ? 'Granted' : 'Not Granted'}`} />
-                    </View>
-                )}
-            </View>
+    const otherCallerStreams = [];
 
-            <View style={[styles.videos, styles.remoteVideos]}>
-                <Text style={styles.videoLabel} children="Friends Video" />
+    for (let i = 0; i < otherCallNum; i++) {
+        otherCallerStreams.push(
+            <View key={i} style={[
+                styles.videos,
+                styles.localVideos,
+                otherCallNum >= 2 ?
+                    { width: highUserVideoWidth, height: highUserVideoHeight }
+                    : { width: lowUserVideoWidth, height: lowUserVideoHeight }
+            ]}>
+                <View style={styles.nameText}>
+                    <Text style={styles.videoLabel} children={otherId + ` ${i + 1}`} />
+                </View>
                 {remoteStream ? (
                     <RTCView
                         stream={remoteStream}
@@ -159,22 +158,102 @@ const CallStart = ({ navigation, route }) => {
                     </View>
                 )}
             </View>
+        );
+    }
 
-            <Button
-                mode="contained"
-                onPress={() => {
-                    // Alert.alert("Call Ended", "You have ended the call.");
-                    // send({
-                    //     type: 'hangUp',
-                    //     sender: userIdRef.current,
-                    //     receiver: connectedUserId.current,
-                    // });
-                    handleHangUp();
-                    navigation.goBack();
-                }}
-            >
-                <Text children="End Call" />
-            </Button>
+    return (
+        <View style={styles.videoContainer}>
+
+            {/* <Text style={{ color: '#FFF', fontSize: 20, marginBottom: 10 }} children={'Callers: ' + (otherCallNum + 1)} /> */}
+
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+                <View style={[
+                    styles.videos,
+                    styles.localVideos,
+                    otherCallNum >= 2 ?
+                        { width: highUserVideoWidth, height: highUserVideoHeight }
+                        : { width: lowUserVideoWidth, height: lowUserVideoHeight }
+                ]}>
+
+                    <View style={styles.nameText}>
+                        <Text style={styles.videoLabel} children={userId} />
+                    </View>
+
+                    {localPreviewStream ? (
+                        <RTCView
+                            stream={localPreviewStream}
+                            style={styles.localVideo}
+                            objectfit="cover"
+                        />
+                    ) : (
+                        <View style={[styles.localVideo, styles.noVideoContainer]}>
+                            <Text style={styles.noVideoText} children="No local video stream" />
+                            <Text style={[styles.noVideoText, { fontSize: 12 }]} children={`Permissions: ${permissionsGranted ? 'Granted' : 'Not Granted'}`} />
+                        </View>
+                    )}
+
+                </View>
+
+                {/* <View style={[styles.videos, styles.remoteVideos]}>
+
+                    <View style={styles.nameText}>
+                        <Text style={styles.videoLabel} children={otherId} />
+                    </View>
+
+                    {remoteStream ? (
+                        <RTCView
+                            stream={remoteStream}
+                            style={styles.remoteVideo}
+                            objectfit="cover"
+                        />
+                    ) : (
+                        <View style={[styles.remoteVideo, styles.noVideoContainer]}>
+                            <Text style={styles.noVideoText} children="No remote video stream" />
+                        </View>
+                    )}
+
+                </View> */}
+
+                {otherCallerStreams}
+
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                <Button
+                    mode="contained"
+                    onPress={() => {
+                        // Alert.alert("Call Ended", "You have ended the call.");
+                        // send({
+                        //     type: 'hangUp',
+                        //     sender: userIdRef.current,
+                        //     receiver: connectedUserId.current,
+                        // });
+                        handleHangUp();
+                        navigation.goBack();
+                    }}
+                >
+                    <Text children="End Call" />
+                </Button>
+
+                <Button
+                    mode="contained"
+                    onPress={() => {
+                        setOtherCallNum(otherCallNum - 1);
+                    }}
+                >
+                    <Text children="Remove -" />
+                </Button>
+
+                <Button
+                    mode="contained"
+                    onPress={() => {
+                        setOtherCallNum(otherCallNum + 1);
+                    }}
+                >
+                    <Text children="Add +" />
+                </Button>
+
+            </View>
 
 
         </View>
@@ -182,45 +261,73 @@ const CallStart = ({ navigation, route }) => {
 }
 
 const styles = StyleSheet.create({
+    videoContainer: {
+        flex: 1,
+        padding: 10,
+        backgroundColor: '#222',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     videos: {
-        width: '100%',
+        // width: '100%',
         position: 'relative',
         overflow: 'hidden',
         borderRadius: 12,
-        backgroundColor: '#f8f9fa',
-        borderWidth: 1,
-        borderColor: '#e9ecef',
-        margin: Platform.OS === 'web' ? 10 : 10,
+        // backgroundColor: '#f8f9fa',
+        // borderWidth: 1,
+        // borderColor: '#e9ecef',
+        margin: 15,
 
-        minHeight: Platform.OS === 'web' ? 100 : 50,
-        maxHeight: Platform.OS === 'web' ? 500 : 300,
-        minWidth: Platform.OS === 'web' ? 100 : 50,
-        maxWidth: Platform.OS === 'web' ? '100%' : '100%',
+        // width: highUserVideoWidth,
+        // height: highUserVideoHeight,
+
+        // minHeight: Platform.OS === 'web' ? 100 : 50,
+        // maxHeight: Platform.OS === 'web' ? 500 : 300,
+        // minWidth: Platform.OS === 'web' ? 100 : 50,
+        // maxWidth: Platform.OS === 'web' ? '100%' : '100%',
     },
     localVideos: {
-        height: Platform.OS === 'web' ? 400 : 350,
-        minHeight: Platform.OS === 'web' ? 300 : 50,
+        position: 'relative',
+        // height: Platform.OS === 'web' ? 400 : 350,
+        // minHeight: Platform.OS === 'web' ? 300 : 50,
         marginBottom: Platform.OS === 'web' ? 20 : 15,
+        // width: highUserVideoWidth,
+        // height: highUserVideoHeight,
     },
     remoteVideos: {
-        height: Platform.OS === 'web' ? 400 : 350,
-        minHeight: Platform.OS === 'web' ? 300 : 50,
+        position: 'relative',
+        // minHeight: Platform.OS === 'web' ? 300 : 50,
+        marginBottom: Platform.OS === 'web' ? 20 : 15,
+        // width: highUserVideoWidth,
+        // height: highUserVideoHeight,
     },
     localVideo: {
-        backgroundColor: '#f8f9fa',
+        // backgroundColor: '#f8f9fa',
         height: '100%',
         width: '100%',
+        borderRadius: 12,
     },
     remoteVideo: {
-        backgroundColor: '#f8f9fa',
+        // backgroundColor: '#f8f9fa',
         height: '100%',
         width: '100%',
+        borderRadius: 12,
     },
     videoLabel: {
         margin: 8,
         fontSize: 16,
         fontWeight: '600',
-        color: '#333',
+        color: '#FFF',
+    },
+    nameText: {
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        zIndex: 1,
+        backgroundColor: '#5166EC',
+        padding: 4,
+        borderRadius: 8,
+        opacity: 0.8,
     },
     noVideoContainer: {
         justifyContent: 'center',
