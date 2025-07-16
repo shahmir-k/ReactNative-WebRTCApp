@@ -134,6 +134,9 @@ const CallStart = ({ navigation, route }) => {
 
     const otherCallerStreams = [];
 
+    const [microphoneEnabled, setMicrophoneEnabled] = useState(true);
+    const [cameraEnabled, setCameraEnabled] = useState(true);
+
     for (let i = 0; i < otherCallNum; i++) {
         otherCallerStreams.push(
             <View key={i} style={[
@@ -160,6 +163,15 @@ const CallStart = ({ navigation, route }) => {
             </View>
         );
     }
+
+    useEffect(() => {
+        const stream = localStreamRef.current || localStream;
+        if (stream) {
+            stream.getAudioTracks().forEach(track => {
+                track.enabled = microphoneEnabled;
+            });
+        }
+    }, [microphoneEnabled, localStream, localStreamRef, callActive]);
 
     return (
         <View style={styles.videoContainer}>
@@ -219,6 +231,66 @@ const CallStart = ({ navigation, route }) => {
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+
+                <Button
+                    onPress={() => {
+                        setMicrophoneEnabled((prev) => !prev);
+                    }}
+
+                    style={microphoneEnabled ? styles.muteButtonUnmuted : styles.muteButtonMuted}
+                >
+                    {microphoneEnabled ? (
+                        <Icon
+                            source="microphone"
+                            style={{ width: 50, height: 100 }}
+                        />
+                    ) : (
+                        <Icon
+                            source="microphone-off"
+                            style={{ width: 50, height: 100 }}
+                        />
+                    )
+                    }
+
+                    {/* <Text children="Microphone" /> */}
+                </Button>
+
+                <Button
+                    onPress={() => {
+                        setCameraEnabled((prev) => !prev);
+                        if (localStreamRef.current) {
+                            localStreamRef.current.getVideoTracks().forEach(track => {
+                                track.enabled = !cameraEnabled;
+                            });
+                        }
+                    }
+                    }
+                >
+                    {cameraEnabled ? (
+                        <Icon
+                            source="video"
+                            style={{ width: 50, height: 100 }}
+                            onPress={() => {
+                                setCameraEnabled(false);
+                                localStreamRef.current.getVideoTracks().forEach(track => {
+                                    track.enabled = false;
+                                });
+                            }}
+                        />
+                    ) : (
+                        <Icon
+                            source="video-off"
+                            style={{ width: 50, height: 100 }}
+                            onPress={() => {
+                                setCameraEnabled(true);
+                                localStreamRef.current.getVideoTracks().forEach(track => {
+                                    track.enabled = true;
+                                });
+                            }}
+                        />
+                    )}
+                </Button>
+
                 <Button
                     mode="contained"
                     onPress={() => {
@@ -235,6 +307,13 @@ const CallStart = ({ navigation, route }) => {
                     <Text children="End Call" />
                 </Button>
 
+                <Button>
+                    <Text children="Add Another Caller" />
+                </Button>
+
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
                 <Button
                     mode="contained"
                     onPress={() => {
@@ -252,7 +331,6 @@ const CallStart = ({ navigation, route }) => {
                 >
                     <Text children="Add +" />
                 </Button>
-
             </View>
 
 
@@ -336,6 +414,16 @@ const styles = StyleSheet.create({
     },
     noVideoText: {
         color: '#888',
+    },
+
+    muteButtonUnmuted: {
+        backgroundColor: '#525252ff',
+        borderRadius: 500,
+    },
+
+    muteButtonMuted: {
+        backgroundColor: '#FF3B30',
+        borderRadius: 500,
     },
 });
 
