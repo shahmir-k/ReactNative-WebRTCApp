@@ -308,6 +308,8 @@ export const CallProvider = ({ children }) => {
                 stream.getTracks().forEach(track => {
                     console.log('Adding track to peer connection:', track.kind);
                     yourConn.current.addTrack(track, stream);
+
+                    console.log(`Track added to peer connection: ${track.kind} (${track.id})`);
                 });
 
                 // For local preview, create a video-only stream
