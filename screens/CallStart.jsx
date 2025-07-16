@@ -137,6 +137,10 @@ const CallStart = ({ navigation, route }) => {
     const [microphoneEnabled, setMicrophoneEnabled] = useState(true);
     const [cameraEnabled, setCameraEnabled] = useState(true);
 
+    const microphoneEnabledRef = useRef(microphoneEnabled);
+    const cameraEnabledRef = useRef(cameraEnabled);
+
+
     for (let i = 0; i < otherCallNum; i++) {
         otherCallerStreams.push(
             <View key={i} style={[
@@ -164,60 +168,34 @@ const CallStart = ({ navigation, route }) => {
         );
     }
 
-    function createSilentAudioTrack() {
-        const ctx = new AudioContext();
-        const oscillator = ctx.createOscillator();
-        const dst = oscillator.connect(ctx.createMediaStreamDestination());
-        oscillator.start();
-        return dst.stream.getAudioTracks()[0];
-    }
+
+    // useEffect(() => {
+    //     if (callActive) {
+    //         const sender = yourConn.current?.getSenders().forEach(sender => {
+    //             if (sender.track.kind == 'audio') {
+    //                 sender.track.enabled = microphoneEnabled;
+    //                 console.log(`Audio track checked here: ${sender.track.kind} (${sender.track.id})`);
+    //             }
+    //         });
+    //     }
+    // }, [microphoneEnabled]);
+
+    // useEffect(() => {
+    //     if (callActive) {
+    //         const sender = yourConn.current?.getSenders().forEach(sender => {
+    //             if (sender.track.kind == 'video') {
+    //                 sender.track.enabled = cameraEnabled;
+    //                 console.log(`Video track checked here: ${sender.track.kind} (${sender.track.id})`);
+    //             }
+    //         });
+    //     }
+    // }, [cameraEnabled])
 
     useEffect(() => {
-        // const stream = localStream;
-        // if (stream) {
-        //     stream.getAudioTracks().forEach(track => {
-
-        //         track.enabled = microphoneEnabled;
-        //         // stream.replaceTrack()
-
-        //         // track.stop();
-
-        //         console.log('Track:', track);
-        //         console.log('[0]:', stream.getAudioTracks()[0]);
-
-        //         console.log(`Track checked here: ${track.kind} (${track.id})`);
-        //         // track.muted = !microphoneEnabled;
-        //     });
-        // }
-
-        // const silentTrack = createSilentAudioTrack();
-
-        const sender = yourConn.current?.getSenders().forEach(sender => {
-            if (sender.track.kind == 'audio') {
-                sender.track.enabled = microphoneEnabled;
-                console.log(`Audio track checked here: ${sender.track.kind} (${sender.track.id})`);
-            }
-        });
-
-        // if (sender) {
-        //     sender.track.enabled = microphoneEnabled;
-        //     // sender.removeTrack();
-        //     // yourConn.current.removeTrack(sender);
-        //     // sender.replaceTrack(silentTrack);
-
-        //     // console.log(sender.track.getAudioTracks());
-        //     // console.log(`Audio track checked here: ${sender.track.kind} (${sender.track.id})`);
-        // }
-    }, [microphoneEnabled]);
-
-    useEffect(() => {
-        const sender = yourConn.current?.getSenders().forEach(sender => {
-            if (sender.track.kind == 'video') {
-                sender.track.enabled = cameraEnabled;
-                console.log(`Video track checked here: ${sender.track.kind} (${sender.track.id})`);
-            }
-        });
-    }, [cameraEnabled])
+        if (!callActive) {
+            navigation.goBack();
+        }
+    }, [callActive])
 
     return (
         <View style={styles.videoContainer}>
@@ -235,6 +213,23 @@ const CallStart = ({ navigation, route }) => {
 
                     <View style={styles.nameText}>
                         <Text style={styles.videoLabel} children={userId} />
+
+
+                        {microphoneEnabled ? (
+                            <IconButton
+                                icon="microphone"
+                                size={54}
+                                color="#FFF"
+                                style={{ position: 'absolute', top: 10, right: 10 }}
+                            />
+                        ) : (
+                            <IconButton
+                                icon="microphone-off"
+                                size={54}
+                                color="#FFF"
+                                style={{ position: 'absolute', top: 10, right: 10 }}
+                            />
+                        )}
                     </View>
 
                     {localPreviewStream ? (
@@ -281,6 +276,18 @@ const CallStart = ({ navigation, route }) => {
                 <Button
                     onPress={() => {
                         setMicrophoneEnabled(!microphoneEnabled);
+                        microphoneEnabledRef.current = !microphoneEnabled;
+
+                        if (callActive) {
+                            const sender = yourConn.current?.getSenders().forEach(sender => {
+                                if (sender.track != null && sender.track.kind == 'audio') {
+                                    sender.track.enabled = microphoneEnabledRef.current;
+                                    console.log(`Audio track checked here: ${sender.track.kind} (${sender.track.id})`);
+                                    console.log(sender.track);
+                                    console.log(remoteStreamRef.current.getAudioTracks());
+                                }
+                            });
+                        }
                     }}
 
                     style={microphoneEnabled ? styles.muteButtonUnmuted : styles.muteButtonMuted}
@@ -304,11 +311,16 @@ const CallStart = ({ navigation, route }) => {
                 <Button
                     onPress={() => {
                         setCameraEnabled(!cameraEnabled);
-                        // if (localStreamRef.current) {
-                        //     localStreamRef.current.getVideoTracks().forEach(track => {
-                        //         track.enabled = !cameraEnabled;
-                        //     });
-                        // }
+                        cameraEnabledRef.current = !cameraEnabled;
+
+                        if (callActive) {
+                            const sender = yourConn.current?.getSenders().forEach(sender => {
+                                if (sender.track != null && sender.track.kind == 'video') {
+                                    sender.track.enabled = cameraEnabledRef.current;
+                                    console.log(`Video track checked here: ${sender.track.kind} (${sender.track.id})`);
+                                }
+                            });
+                        }
                     }
                     }
                 >
@@ -335,7 +347,7 @@ const CallStart = ({ navigation, route }) => {
                         //     receiver: connectedUserId.current,
                         // });
                         handleHangUp();
-                        navigation.goBack();
+                        // navigation.goBack();
                     }}
                 >
                     <Text children="End Call" />
