@@ -213,21 +213,44 @@ const CallStart = ({ navigation, route }) => {
 
                     <View style={styles.nameText}>
                         <Text style={styles.videoLabel} children={userId} />
+                    </View>
 
-
+                    <View
+                        style={microphoneEnabled ? styles.micStatusUnmuted : styles.micStatusMuted}
+                    >
                         {microphoneEnabled ? (
                             <IconButton
                                 icon="microphone"
-                                size={54}
+                                size={22}
                                 color="#FFF"
-                                style={{ position: 'absolute', top: 10, right: 10 }}
+                                style={{ position: 'static' }}
                             />
                         ) : (
                             <IconButton
                                 icon="microphone-off"
-                                size={54}
+                                size={22}
                                 color="#FFF"
-                                style={{ position: 'absolute', top: 10, right: 10 }}
+                                style={{ position: 'static' }}
+                            />
+                        )}
+                    </View>
+
+                    <View
+                        style={cameraEnabled ? styles.cameraStatusOn : styles.cameraStatusOff}
+                    >
+                        {cameraEnabled ? (
+                            <IconButton
+                                icon="camera"
+                                size={22}
+                                color="#FFF"
+                                style={{ position: 'static' }}
+                            />
+                        ) : (
+                            <IconButton
+                                icon="camera-off"
+                                size={22}
+                                color="#FFF"
+                                style={{ position: 'static' }}
                             />
                         )}
                     </View>
@@ -244,6 +267,10 @@ const CallStart = ({ navigation, route }) => {
                             <Text style={[styles.noVideoText, { fontSize: 12 }]} children={`Permissions: ${permissionsGranted ? 'Granted' : 'Not Granted'}`} />
                         </View>
                     )}
+
+                </View>
+
+                <View>
 
                 </View>
 
@@ -295,12 +322,14 @@ const CallStart = ({ navigation, route }) => {
                     {microphoneEnabled ? (
                         <Icon
                             source="microphone"
-                            style={{ width: 50, height: 100 }}
+                            size={30}
+                            style={{ padding: 20 }}
                         />
                     ) : (
                         <Icon
                             source="microphone-off"
-                            style={{ width: 50, height: 100 }}
+                            size={30}
+                            style={{ padding: 20 }}
                         />
                     )
                     }
@@ -321,20 +350,33 @@ const CallStart = ({ navigation, route }) => {
                                 }
                             });
                         }
-                    }
-                    }
+                    }}
+
+                    style={cameraEnabled ? styles.cameraButtonOn : styles.cameraButtonOff}
                 >
                     {cameraEnabled ? (
                         <Icon
                             source="video"
-                            style={{ width: 50, height: 100 }}
+                            size={30}
+                            style={{ padding: 20 }}
                         />
                     ) : (
                         <Icon
                             source="video-off"
-                            style={{ width: 50, height: 100 }}
+                            size={30}
+                            style={{ padding: 20 }}
                         />
                     )}
+                </Button>
+
+                <Button
+                    style={styles.addContactsButton}
+                >
+                    <Icon
+                        source="account-multiple-plus"
+                        size={30}
+                        style={{ padding: 20 }}
+                    />
                 </Button>
 
                 <Button
@@ -349,17 +391,19 @@ const CallStart = ({ navigation, route }) => {
                         handleHangUp();
                         // navigation.goBack();
                     }}
-                >
-                    <Text children="End Call" />
-                </Button>
 
-                <Button>
-                    <Text children="Add Another Caller" />
+                    style={styles.hangupButton}
+                >
+                    <Icon
+                        source="phone-hangup"
+                        size={30}
+                        style={{ padding: 20 }}
+                    />
                 </Button>
 
             </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+            {/* <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
                 <Button
                     mode="contained"
                     onPress={() => {
@@ -377,7 +421,7 @@ const CallStart = ({ navigation, route }) => {
                 >
                     <Text children="Add +" />
                 </Button>
-            </View>
+            </View> */}
 
 
         </View>
@@ -453,6 +497,49 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         opacity: 0.8,
     },
+    micStatusUnmuted: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        zIndex: 1,
+        backgroundColor: '#525252ff',
+        padding: 4,
+        borderRadius: 8,
+        opacity: 0.8,
+    },
+    micStatusMuted: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        zIndex: 1,
+        backgroundColor: '#FF3B30',
+        padding: 4,
+        borderRadius: 8,
+        opacity: 1,
+    },
+
+    cameraStatusOn: {
+        position: 'absolute',
+        top: 10,
+        right: 75,
+        zIndex: 1,
+        backgroundColor: '#525252ff',
+        padding: 4,
+        borderRadius: 8,
+        opacity: 0.8,
+    },
+
+    cameraStatusOff: {
+        position: 'absolute',
+        top: 10,
+        right: 75,
+        zIndex: 1,
+        backgroundColor: '#FF3B30',
+        padding: 4,
+        borderRadius: 8,
+        opacity: 1,
+    },
+
     noVideoContainer: {
         justifyContent: 'center',
         alignItems: 'center',
@@ -464,12 +551,44 @@ const styles = StyleSheet.create({
 
     muteButtonUnmuted: {
         backgroundColor: '#525252ff',
-        borderRadius: 500,
+        borderRadius: 100,
+        // padding: 10,
+        marginHorizontal: 10,
     },
 
     muteButtonMuted: {
         backgroundColor: '#FF3B30',
-        borderRadius: 500,
+        borderRadius: 100,
+        // padding: 10,
+        marginHorizontal: 10,
+    },
+
+    cameraButtonOn: {
+        backgroundColor: '#525252ff',
+        borderRadius: 100,
+        // padding: 10,
+        marginHorizontal: 5,
+    },
+
+    cameraButtonOff: {
+        backgroundColor: '#FF3B30',
+        borderRadius: 100,
+        // padding: 10,
+        marginHorizontal: 5,
+    },
+
+    hangupButton: {
+        backgroundColor: '#FF3B30',
+        borderRadius: 100,
+        // padding: 10,
+        marginHorizontal: 10,
+    },
+
+    addContactsButton: {
+        backgroundColor: '#5166EC',
+        borderRadius: 100,
+        // padding: 10,
+        marginHorizontal: 10,
     },
 });
 
