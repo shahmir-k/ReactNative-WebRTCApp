@@ -120,6 +120,11 @@ export const CallProvider = ({ children }) => {
     // Added for local preview
     const [localPreviewStream, setLocalPreviewStream] = useState(null);
 
+
+    const [selectedVideoDeviceId, setSelectedVideoDeviceId] = useState('');
+    const [selectedAudioDeviceId, setSelectedAudioDeviceId] = useState('');
+
+
     /**
      * Check permissions and initialize local video if granted
      * Can be called from multiple places to ensure video is available
@@ -273,13 +278,23 @@ export const CallProvider = ({ children }) => {
         // Use web-compatible constraints
         const constraints = Platform.OS === 'web'
             ? {
-                audio: true,
-                video: {
-                    width: { min: 500, ideal: 1280, max: 1920 },
-                    height: { min: 300, ideal: 720, max: 1080 },
-                    frameRate: { min: 30, ideal: 30 },
-                    facingMode: 'user'
-                }
+                audio: selectedAudioDeviceId
+                    ? { deviceId: { exact: selectedAudioDeviceId } }
+                    : true,
+                video: selectedVideoDeviceId
+                    ? {
+                        deviceId: { exact: selectedVideoDeviceId },
+                        width: { min: 500, ideal: 1280, max: 1920 },
+                        height: { min: 300, ideal: 720, max: 1080 },
+                        frameRate: { min: 30, ideal: 30 },
+                        facingMode: 'user'
+                    }
+                    : {
+                        width: { min: 500, ideal: 1280, max: 1920 },
+                        height: { min: 300, ideal: 720, max: 1080 },
+                        frameRate: { min: 30, ideal: 30 },
+                        facingMode: 'user'
+                    }
             }
             : {
                 audio: true,
@@ -344,10 +359,10 @@ export const CallProvider = ({ children }) => {
     };
 
     /**
-     * Initiate a call to another user
-     * Creates and sends offer to signaling server
-     * @param user - Optional user ID to call, defaults to callToUsername
-     */
+ * Initiate a call to another user
+ * Creates and sends offer to signaling server
+ * @param user - Optional user ID to call, defaults to callToUsername
+ */
     const startCalling = async (user = callToUsername) => {
         //if (!permissionsGrantedRef.current) {
         //  Alert.alert('Permissions Required', 'Camera and microphone permissions are required to make calls');
@@ -872,6 +887,61 @@ export const CallProvider = ({ children }) => {
         });
     };
 
+    const switchMediaDevices = async () => {
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+
+        const constraints = {
+            video: selectedVideoDeviceId ? { deviceId: { exact: selectedVideoDeviceId } } : true,
+            audio: selectedAudioDeviceId ? { deviceId: { exact: selectedAudioDeviceId } } : true,
+        };
+
+        try {
+            const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+            setLocalStream(newStream);
+            localStreamRef.current = newStream;
+
+            // Replace tracks in peer connection
+            if (yourConn.current) {
+                // For each kind, replace or add
+                ['audio', 'video'].forEach(kind => {
+                    const newTrack = newStream.getTracks().find(t => t.kind === kind);
+                    const sender = yourConn.current.getSenders().find(s => s.track && s.track.kind === kind);
+                    if (sender && newTrack) {
+                        sender.replaceTrack(newTrack);
+                    } else if (newTrack) {
+                        yourConn.current.addTrack(newTrack, newStream);
+                    }
+                });
+            }
+
+            // Update local preview
+            const videoTracks = newStream.getVideoTracks();
+            if (videoTracks.length > 0) {
+                const videoOnlyStream = new MediaStream([videoTracks[0]]);
+                setLocalPreviewStream(videoOnlyStream);
+            }
+
+            // --- Renegotiate if in a call ---
+            if (callActive && yourConn.current) {
+                // Create a new offer and send to remote
+                const offer = await yourConn.current.createOffer();
+                await yourConn.current.setLocalDescription(offer);
+                send({
+                    type: 'offer',
+                    sender: userIdRef.current,
+                    receiver: connectedUser.current,
+                    data: offer,
+                });
+            }
+
+            console.log("Switch Media Devices has now been completed:");
+        } catch (err) {
+            Alert.alert('Error', 'Failed to switch devices: ' + err.message);
+        }
+    };
+
     return (
         <CallContext.Provider value={{
             userId, setUserId,
@@ -903,6 +973,11 @@ export const CallProvider = ({ children }) => {
 
             localPreviewStream, setLocalPreviewStream,
 
+
+            selectedVideoDeviceId, setSelectedVideoDeviceId,
+            selectedAudioDeviceId, setSelectedAudioDeviceId,
+
+
             checkPermissionsAndInitVideo,
             registerPeerEvents,
             resetPeer,
@@ -921,7 +996,7 @@ export const CallProvider = ({ children }) => {
             cleanupAllMedia,
             handleHangUp,
             handleLogout,
-
+            switchMediaDevices,
         }}>
             {children}
         </CallContext.Provider>

@@ -3,7 +3,7 @@
 // LinkedIn: https://www.linkedin.com/in/shahmir-k
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, StyleSheet, Alert, Platform, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, Platform, ScrollView, TouchableOpacity, Picker } from 'react-native';
 import { Text, Button, TextInput, Card, IconButton } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -33,6 +33,8 @@ import Constants from 'expo-constants';
 import { Icon, ActivityIndicator } from 'react-native-paper';
 
 import { useCall } from '../contexts/CallContext';
+
+import { enumerateDevices } from '../utils/permissions'
 
 // Get environment variables from Expo config
 const {
@@ -107,6 +109,11 @@ export default function CallScreen({ navigation }) {
 
     localPreviewStream, setLocalPreviewStream,
 
+
+    selectedVideoDeviceId, setSelectedVideoDeviceId,
+    selectedAudioDeviceId, setSelectedAudioDeviceId,
+
+
     checkPermissionsAndInitVideo,
     registerPeerEvents,
     resetPeer,
@@ -125,8 +132,17 @@ export default function CallScreen({ navigation }) {
     cleanupAllMedia,
     handleHangUp,
     handleLogout,
+    switchMediaDevices,
 
   } = useCall();
+
+
+  const [videoDevices, setVideoDevices] = useState([]);
+  const [audioDevices, setAudioDevices] = useState([]);
+  // const [selectedVideoDeviceId, setSelectedVideoDeviceId] = useState(null);
+  // const [selectedAudioDeviceId, setSelectedAudioDeviceId] = useState(null);
+
+
 
   // State management for user interface and call status
   // const [userId, setUserId] = useState('');
@@ -1141,6 +1157,10 @@ export default function CallScreen({ navigation }) {
     });
   };
 
+
+
+
+
   useEffect(() => {
     if (localPreviewStream && remoteStream && callActive) {
       // navigation.navigate('CallStart', {
@@ -1152,6 +1172,33 @@ export default function CallScreen({ navigation }) {
       navigation.navigate('CallStart');
     }
   }, [localPreviewStream, remoteStream, callActive, navigation]);
+
+
+  // Fetch devices when component mounts:
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      // Step 1: Request a dummy stream to unlock device info
+      navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+        .then(dummyStream => {
+          // Step 2: Now enumerate devices
+          enumerateDevices().then(({ videoDevices, audioDevices }) => {
+            setVideoDevices(videoDevices);
+            setAudioDevices(audioDevices);
+            if (videoDevices.length > 0) setSelectedVideoDeviceId(videoDevices[0].deviceId);
+            if (audioDevices.length > 0) setSelectedAudioDeviceId(audioDevices[0].deviceId);
+
+            console.log("These are the video devices:", videoDevices);
+            console.log("These are the audio devices:", audioDevices);
+          });
+          // Step 3: Stop the dummy stream
+          dummyStream.getTracks().forEach(track => track.stop());
+        })
+        .catch(err => {
+          console.log("Could not get user media for device enumeration:", err);
+          // Optionally show an error to the user
+        });
+    }
+  }, []);
 
 
   // const {
@@ -1300,6 +1347,32 @@ export default function CallScreen({ navigation }) {
                 </View>
               )}
             </View>
+
+
+            {Platform.OS === 'web' && (
+              <View>
+                <Text>Camera:</Text>
+                <Picker
+                  selectedValue={selectedVideoDeviceId}
+                  onValueChange={setSelectedVideoDeviceId}>
+                  {videoDevices.map(device => (
+                    <Picker.Item key={device.deviceId} label={device.label || 'Camera'} value={device.deviceId} />
+                  ))}
+                </Picker>
+                <Text>Microphone:</Text>
+                <Picker
+                  selectedValue={selectedAudioDeviceId}
+                  onValueChange={setSelectedAudioDeviceId}>
+                  {audioDevices.map(device => (
+                    <Picker.Item key={device.deviceId} label={device.label || 'Microphone'} value={device.deviceId} />
+                  ))}
+                </Picker>
+                <Button onPress={switchMediaDevices}>Switch Devices</Button>
+              </View>
+            )}
+
+
+
             <View style={[styles.videos, styles.remoteVideos]}>
               <Text style={styles.videoLabel} children="Friends Video" />
               {remoteStream ? (

@@ -12,14 +12,17 @@ const enumerateDevices = async () => {
       console.log('Device enumeration not supported');
       return;
     }
-    
+
     const devices = await navigator.mediaDevices.enumerateDevices();
     const videoDevices = devices.filter(device => device.kind === 'videoinput');
     const audioDevices = devices.filter(device => device.kind === 'audioinput');
-    
+
     console.log('Available video devices:', videoDevices.length);
     console.log('Available audio devices:', audioDevices.length);
-    
+
+    console.log('List of video devices:', videoDevices);
+    console.log("List of audio devices:", audioDevices);
+
     return { videoDevices, audioDevices };
   } catch (error) {
     console.log('Error enumerating devices:', error);
@@ -37,27 +40,27 @@ const requestWebPermission = async (permissionName) => {
 
     // Enumerate devices first to check availability
     const deviceInfo = await enumerateDevices();
-    const deviceCount = permissionName === 'camera' 
+    const deviceCount = permissionName === 'camera'
       ? (deviceInfo && deviceInfo.videoDevices ? deviceInfo.videoDevices.length : 0)
       : (deviceInfo && deviceInfo.audioDevices ? deviceInfo.audioDevices.length : 0);
-    
+
     console.log(`Found ${deviceCount} ${permissionName} devices`);
 
     // Always try to get user media first to trigger permission prompt
-    const constraints = permissionName === 'camera' 
+    const constraints = permissionName === 'camera'
       ? { video: true, audio: false }
       : { video: false, audio: true };
-    
+
     console.log(`Requesting ${permissionName} with constraints:`, constraints);
-    
+
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    
+
     // Stop the test stream immediately
     stream.getTracks().forEach(track => {
       track.stop();
       console.log(`Stopped ${track.kind} track`);
     });
-    
+
     // Now check the permission state for future reference
     if (navigator.permissions) {
       try {
@@ -67,12 +70,12 @@ const requestWebPermission = async (permissionName) => {
         console.log(`Could not query ${permissionName} permission state:`, permError);
       }
     }
-    
+
     console.log(`${permissionName} permission granted successfully`);
     return true;
   } catch (error) {
     console.log(`Error requesting ${permissionName} permission on web:`, error);
-    
+
     // Check if it's a permission denied error
     if (error && error.name) {
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
@@ -91,7 +94,7 @@ const requestWebPermission = async (permissionName) => {
     } else {
       Alert.alert('Error', `Failed to access ${permissionName}`);
     }
-    
+
     return false;
   }
 };
@@ -115,7 +118,7 @@ const requestCameraPermission = async () => {
     }
 
     const result = await request(permission);
-    
+
     switch (result) {
       case RESULTS.UNAVAILABLE:
         Alert.alert('Error', 'Camera is not available on this device');
@@ -158,7 +161,7 @@ const requestMicrophonePermission = async () => {
     }
 
     const result = await request(permission);
-    
+
     switch (result) {
       case RESULTS.UNAVAILABLE:
         Alert.alert('Error', 'Microphone is not available on this device');
@@ -185,8 +188,8 @@ const requestMicrophonePermission = async () => {
 const requestAllPermissions = async () => {
   const cameraPermission = await requestCameraPermission();
   const microphonePermission = await requestMicrophonePermission();
-  
+
   return cameraPermission && microphonePermission;
 };
 
-export { requestAllPermissions, requestCameraPermission, requestMicrophonePermission }; 
+export { requestAllPermissions, requestCameraPermission, requestMicrophonePermission, enumerateDevices }; 
