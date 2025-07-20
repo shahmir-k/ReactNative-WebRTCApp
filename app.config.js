@@ -1,6 +1,6 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '.env') });
-
+//require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+require('dotenv').config();
 module.exports = {
   expo: {
     name: "WebRTCApp",
@@ -30,13 +30,13 @@ module.exports = {
     },
     extra: {
       SECRET1: process.env.SECRET1 || "Fallback secret",
-      SIGNALING_SERVER_URL: process.env.SIGNALING_SERVER_URL || "ws://localhost:8080",
-      STUN_SERVER_URL: process.env.STUN_SERVER_URL || "stun:stun.l.google.com:19302",
-      TURN_SERVER_URL: process.env.TURN_SERVER_URL || "",
-      TURN_SERVER_TCP_URL: process.env.TURN_SERVER_TCP_URL || "",
-      TURN_SERVER_TLS_URL: process.env.TURN_SERVER_TLS_URL || "",
-      TURN_USERNAME: process.env.TURN_USERNAME || "",
-      TURN_CREDENTIAL: process.env.TURN_CREDENTIAL || "",
+      SIGNALING_SERVER_URL: process.env.SIGNALING_SERVER_URL || "ws://localhost:8080/signal",
+      STUN_SERVER_URL: process.env.STUN_SERVER_URL || "stun:localhost:3478",
+      TURN_SERVER_URL: process.env.TURN_SERVER_URL || "turn:localhost:3478",
+      TURN_SERVER_TCP_URL: process.env.TURN_SERVER_TCP_URL || "turn:localhost:3478?transport=tcp",
+      TURN_SERVER_TLS_URL: process.env.TURN_SERVER_TLS_URL || "turns:localhost:5349",
+      TURN_USERNAME: process.env.TURN_USERNAME || "username",
+      TURN_CREDENTIAL: process.env.TURN_CREDENTIAL || "password",
       ICE_CANDIDATE_POOL_SIZE: process.env.ICE_CANDIDATE_POOL_SIZE || "10",
       BUNDLE_POLICY: process.env.BUNDLE_POLICY || "balanced",
       RTCP_MUX_POLICY: process.env.RTCP_MUX_POLICY || "require",
