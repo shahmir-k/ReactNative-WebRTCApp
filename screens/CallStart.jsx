@@ -144,24 +144,24 @@ const CallStart = ({ navigation, route }) => {
     for (let i = 0; i < otherCallNum; i++) {
         otherCallerStreams.push(
             <View key={i} style={[
-                styles.videos,
-                styles.localVideos,
+                styles.callVideos,
+                styles.callLocalVideos,
                 otherCallNum >= 2 ?
                     { width: highUserVideoWidth, height: highUserVideoHeight }
                     : { width: lowUserVideoWidth, height: lowUserVideoHeight }
             ]}>
-                <View style={styles.nameText}>
-                    <Text style={styles.videoLabel} children={otherId + ` ${i + 1}`} />
+                <View style={styles.callNameText}>
+                    <Text style={styles.callVideoLabel} children={otherId + ` ${i + 1}`} />
                 </View>
                 {remoteStream ? (
                     <RTCView
                         stream={remoteStream}
-                        style={styles.remoteVideo}
+                        style={styles.callRemoteVideo}
                         objectfit="cover"
                     />
                 ) : (
-                    <View style={[styles.remoteVideo, styles.noVideoContainer]}>
-                        <Text style={styles.noVideoText} children="No remote video stream" />
+                    <View style={[styles.callRemoteVideo, styles.callNoVideoContainer]}>
+                        <Text style={styles.callNoVideoText} children="No remote video stream" />
                     </View>
                 )}
             </View>
@@ -198,25 +198,25 @@ const CallStart = ({ navigation, route }) => {
     }, [callActive])
 
     return (
-        <View style={styles.videoContainer}>
+        <View style={styles.callVideoContainer}>
 
             {/* <Text style={{ color: '#FFF', fontSize: 20, marginBottom: 10 }} children={'Callers: ' + (otherCallNum + 1)} /> */}
 
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
                 <View style={[
-                    styles.videos,
-                    styles.localVideos,
+                    styles.callVideos,
+                    styles.callLocalVideos,
                     otherCallNum >= 2 ?
                         { width: highUserVideoWidth, height: highUserVideoHeight }
                         : { width: lowUserVideoWidth, height: lowUserVideoHeight }
                 ]}>
 
-                    <View style={styles.nameText}>
-                        <Text style={styles.videoLabel} children={userId} />
+                    <View style={styles.callNameText}>
+                        <Text style={styles.callVideoLabel} children={userId} />
                     </View>
 
                     <View
-                        style={microphoneEnabled ? styles.micStatusUnmuted : styles.micStatusMuted}
+                        style={microphoneEnabled ? styles.callMicStatusUnmuted : styles.callMicStatusMuted}
                     >
                         {microphoneEnabled ? (
                             <IconButton
@@ -236,7 +236,7 @@ const CallStart = ({ navigation, route }) => {
                     </View>
 
                     <View
-                        style={cameraEnabled ? styles.cameraStatusOn : styles.cameraStatusOff}
+                        style={cameraEnabled ? styles.callCameraStatusOn : styles.callCameraStatusOff}
                     >
                         {cameraEnabled ? (
                             <IconButton
@@ -258,13 +258,13 @@ const CallStart = ({ navigation, route }) => {
                     {localPreviewStream ? (
                         <RTCView
                             stream={localPreviewStream}
-                            style={styles.localVideo}
+                            style={styles.callLocalVideo}
                             objectfit="cover"
                         />
                     ) : (
-                        <View style={[styles.localVideo, styles.noVideoContainer]}>
-                            <Text style={styles.noVideoText} children="No local video stream" />
-                            <Text style={[styles.noVideoText, { fontSize: 12 }]} children={`Permissions: ${permissionsGranted ? 'Granted' : 'Not Granted'}`} />
+                        <View style={[styles.callLocalVideo, styles.callNoVideoContainer]}>
+                            <Text style={styles.callNoVideoText} children="No local video stream" />
+                            <Text style={[styles.callNoVideoText, { fontSize: 12 }]} children={`Permissions: ${permissionsGranted ? 'Granted' : 'Not Granted'}`} />
                         </View>
                     )}
 
@@ -274,21 +274,21 @@ const CallStart = ({ navigation, route }) => {
 
                 </View>
 
-                {/* <View style={[styles.videos, styles.remoteVideos]}>
+                {/* <View style={[styles.callVideos, styles.callRemoteVideos]}>
 
-                    <View style={styles.nameText}>
-                        <Text style={styles.videoLabel} children={otherId} />
+                    <View style={styles.callNameText}>
+                        <Text style={styles.callVideoLabel} children={otherId} />
                     </View>
 
                     {remoteStream ? (
                         <RTCView
                             stream={remoteStream}
-                            style={styles.remoteVideo}
+                            style={styles.callRemoteVideo}
                             objectfit="cover"
                         />
                     ) : (
-                        <View style={[styles.remoteVideo, styles.noVideoContainer]}>
-                            <Text style={styles.noVideoText} children="No remote video stream" />
+                        <View style={[styles.callRemoteVideo, styles.callNoVideoContainer]}>
+                            <Text style={styles.callNoVideoText} children="No remote video stream" />
                         </View>
                     )}
 
@@ -317,7 +317,7 @@ const CallStart = ({ navigation, route }) => {
                         }
                     }}
 
-                    style={microphoneEnabled ? styles.muteButtonUnmuted : styles.muteButtonMuted}
+                    style={microphoneEnabled ? styles.callMuteButtonUnmuted : styles.callMuteButtonMuted}
                 >
                     {microphoneEnabled ? (
                         <Icon
@@ -352,7 +352,7 @@ const CallStart = ({ navigation, route }) => {
                         }
                     }}
 
-                    style={cameraEnabled ? styles.cameraButtonOn : styles.cameraButtonOff}
+                    style={cameraEnabled ? styles.callCameraButtonOn : styles.callCameraButtonOff}
                 >
                     {cameraEnabled ? (
                         <Icon
@@ -370,7 +370,7 @@ const CallStart = ({ navigation, route }) => {
                 </Button>
 
                 <Button
-                    style={styles.addContactsButton}
+                    style={styles.callAddContactsButton}
                 >
                     <Icon
                         source="account-multiple-plus"
@@ -392,7 +392,7 @@ const CallStart = ({ navigation, route }) => {
                         // navigation.goBack();
                     }}
 
-                    style={styles.hangupButton}
+                    style={styles.callHangupButton}
                 >
                     <Icon
                         source="phone-hangup"
@@ -429,14 +429,14 @@ const CallStart = ({ navigation, route }) => {
 }
 
 const styles = StyleSheet.create({
-    videoContainer: {
+    callVideoContainer: {
         flex: 1,
         padding: 10,
         backgroundColor: '#222',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    videos: {
+    callVideos: {
         // width: '100%',
         position: 'relative',
         overflow: 'hidden',
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
         // minWidth: Platform.OS === 'web' ? 100 : 50,
         // maxWidth: Platform.OS === 'web' ? '100%' : '100%',
     },
-    localVideos: {
+    callLocalVideos: {
         position: 'relative',
         // height: Platform.OS === 'web' ? 400 : 350,
         // minHeight: Platform.OS === 'web' ? 300 : 50,
@@ -462,32 +462,32 @@ const styles = StyleSheet.create({
         // width: highUserVideoWidth,
         // height: highUserVideoHeight,
     },
-    remoteVideos: {
+    callRemoteVideos: {
         position: 'relative',
         // minHeight: Platform.OS === 'web' ? 300 : 50,
         marginBottom: Platform.OS === 'web' ? 20 : 15,
         // width: highUserVideoWidth,
         // height: highUserVideoHeight,
     },
-    localVideo: {
+    callLocalVideo: {
         // backgroundColor: '#f8f9fa',
         height: '100%',
         width: '100%',
         borderRadius: 12,
     },
-    remoteVideo: {
+    callRemoteVideo: {
         // backgroundColor: '#f8f9fa',
         height: '100%',
         width: '100%',
         borderRadius: 12,
     },
-    videoLabel: {
+    callVideoLabel: {
         margin: 8,
         fontSize: 16,
         fontWeight: '600',
         color: '#FFF',
     },
-    nameText: {
+    callNameText: {
         position: 'absolute',
         top: 10,
         left: 10,
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         opacity: 0.8,
     },
-    micStatusUnmuted: {
+    callMicStatusUnmuted: {
         position: 'absolute',
         top: 10,
         right: 10,
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         opacity: 0.8,
     },
-    micStatusMuted: {
+    callMicStatusMuted: {
         position: 'absolute',
         top: 10,
         right: 10,
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
         opacity: 1,
     },
 
-    cameraStatusOn: {
+    callCameraStatusOn: {
         position: 'absolute',
         top: 10,
         right: 75,
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
         opacity: 0.8,
     },
 
-    cameraStatusOff: {
+    callCameraStatusOff: {
         position: 'absolute',
         top: 10,
         right: 75,
@@ -540,51 +540,51 @@ const styles = StyleSheet.create({
         opacity: 1,
     },
 
-    noVideoContainer: {
+    callNoVideoContainer: {
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#f8f9fa',
     },
-    noVideoText: {
+    callNoVideoText: {
         color: '#888',
     },
 
-    muteButtonUnmuted: {
+    callMuteButtonUnmuted: {
         backgroundColor: '#525252ff',
         borderRadius: 100,
         // padding: 10,
         marginHorizontal: 10,
     },
 
-    muteButtonMuted: {
+    callMuteButtonMuted: {
         backgroundColor: '#FF3B30',
         borderRadius: 100,
         // padding: 10,
         marginHorizontal: 10,
     },
 
-    cameraButtonOn: {
+    callCameraButtonOn: {
         backgroundColor: '#525252ff',
         borderRadius: 100,
         // padding: 10,
         marginHorizontal: 5,
     },
 
-    cameraButtonOff: {
+    callCameraButtonOff: {
         backgroundColor: '#FF3B30',
         borderRadius: 100,
         // padding: 10,
         marginHorizontal: 5,
     },
 
-    hangupButton: {
+    callHangupButton: {
         backgroundColor: '#FF3B30',
         borderRadius: 100,
         // padding: 10,
         marginHorizontal: 10,
     },
 
-    addContactsButton: {
+    callAddContactsButton: {
         backgroundColor: '#5166EC',
         borderRadius: 100,
         // padding: 10,

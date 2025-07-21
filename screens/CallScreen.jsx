@@ -77,6 +77,14 @@ const ICE_SERVERS = [
   },
 ];
 
+
+const highUserVideoWidth = Platform.OS === 'web' ? 550 : 320;
+const highUserVideoHeight = Platform.OS === 'web' ? '100' : '100';
+
+const lowUserVideoWidth = Platform.OS === 'web' ? 850 : 160;
+const lowUserVideoHeight = Platform.OS === 'web' ? '100' : '100';
+
+
 export default function CallScreen({ navigation }) {
 
   const {
@@ -1169,7 +1177,7 @@ export default function CallScreen({ navigation }) {
       //   handleHangUp,
       //   // You can pass other params if needed (e.g., userIdRef, connectedUser)
       // });
-      navigation.navigate('CallStart');
+      // navigation.navigate('CallStart');
     }
   }, [localPreviewStream, remoteStream, callActive, navigation]);
 
@@ -1251,228 +1259,503 @@ export default function CallScreen({ navigation }) {
   //   onLogout,
   // } = useCall();
 
+  const [otherCallNum, setOtherCallNum] = useState(1);
+
+  const otherCallerStreams = [];
+
+  const [microphoneEnabled, setMicrophoneEnabled] = useState(true);
+  const [cameraEnabled, setCameraEnabled] = useState(true);
+
+  const microphoneEnabledRef = useRef(microphoneEnabled);
+  const cameraEnabledRef = useRef(cameraEnabled);
+
+  for (let i = 0; i < otherCallNum; i++) {
+    otherCallerStreams.push(
+      <View key={i} style={[
+        styles.callVideos,
+        styles.callLocalVideos,
+        otherCallNum >= 2 ?
+          { width: highUserVideoWidth, height: highUserVideoHeight }
+          : { width: lowUserVideoWidth, height: lowUserVideoHeight }
+      ]}>
+        <View style={styles.callNameText}>
+          <Text style={styles.callVideoLabel} children={otherId + ` ${i + 1}`} />
+        </View>
+        {remoteStream ? (
+          <RTCView
+            stream={remoteStream}
+            style={styles.callRemoteVideo}
+            objectfit="cover"
+          />
+        ) : (
+          <View style={[styles.callRemoteVideo, styles.callNoVideoContainer]}>
+            <Text style={styles.callNoVideoText} children="No remote video stream" />
+          </View>
+        )}
+      </View>
+    );
+  }
+
+
+
   return (
-    <View style={styles.root}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={Platform.OS === 'web'}
-      >
-        <View style={styles.content}>
-          <View style={styles.inputField}>
-            <TextInput
-              label="Enter Friends ID"
-              mode="outlined"
-              style={styles.textInput}
-              onChangeText={(text) => setCallToUsername(text)}
-              value={callToUsername}
-              error={!!error}
-            />
-            {error ? (
-              <Text style={styles.errorText}>
-                {error}
-              </Text>
-            ) : null}
-            <Text style={styles.statusText} children={`SOCKET ACTIVE: ${socketActive ? 'TRUE' : 'FALSE'}, FRIEND ID: ${otherId || callToUsername}`} />
-            <Text style={[styles.statusText, { color: permissionsGranted ? '#4CAF50' : '#F44336', marginBottom: 10 }]} children={`PERMISSIONS: ${permissionsGranted ? 'GRANTED' : 'NOT GRANTED'}`} />
-            <View style={styles.buttonContainer}>
-              <Button
-                mode="contained"
-                onPress={() => startCalling()}
-                loading={calling}
-                contentStyle={styles.btnContent}
-                disabled={!socketActive || callToUsername === '' || callActive || !permissionsGranted}
-                style={[styles.button, styles.callButton]}
-                children="Call" />
-              <Button
-                mode="contained"
-                onPress={handleHangUp}
-                contentStyle={styles.btnContent}
-                disabled={!callActive}
-                style={[styles.button, styles.endCallButton]}
-                children="End Call" />
-            </View>
-          </View>
-          {/* available users containers */}
-          <View style={styles.availableUsersContainer}>
-            <Text style={styles.availableUsersText}>Available Users</Text>
-            {availableUsers.length > 1 || availableUsers.length === 0 ? (
-              <View style={styles.usersGrid}>
-                {availableUsers
-                  .filter(user => user !== userId) // Don't show current user
-                  .map((userName, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() => startCalling(userName)}
-                      disabled={!socketActive || callActive || !permissionsGranted || calling}
-                      style={styles.gridCardContainer}
-                    >
-                      <Card style={styles.userCard}>
-                        <Card.Content style={styles.userCardContent}>
-                          <Text style={styles.userName}>{userName}</Text>
-                          <Button
-                            mode="contained"
-                            icon="phone"
-                            onPress={() => startCalling(userName)}
-                            disabled={!socketActive || callActive || !permissionsGranted || calling}
-                            style={styles.callIcon}
-                            compact
-                          >
-                            Call
-                          </Button>
-                        </Card.Content>
-                      </Card>
-                    </TouchableOpacity>
-                  ))}
+    <View style={callActive && styles.callVideoContainer}>
+
+      {!callActive && (
+        <View style={styles.root}>
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={Platform.OS === 'web'}
+          >
+            <View style={styles.content}>
+              <View style={styles.inputField}>
+                <TextInput
+                  label="Enter Friends ID"
+                  mode="outlined"
+                  style={styles.textInput}
+                  onChangeText={(text) => setCallToUsername(text)}
+                  value={callToUsername}
+                  error={!!error}
+                />
+                {error ? (
+                  <Text style={styles.errorText}>
+                    {error}
+                  </Text>
+                ) : null}
+                <Text style={styles.statusText} children={`SOCKET ACTIVE: ${socketActive ? 'TRUE' : 'FALSE'}, FRIEND ID: ${otherId || callToUsername}`} />
+                <Text style={[styles.statusText, { color: permissionsGranted ? '#4CAF50' : '#F44336', marginBottom: 10 }]} children={`PERMISSIONS: ${permissionsGranted ? 'GRANTED' : 'NOT GRANTED'}`} />
+                <View style={styles.buttonContainer}>
+                  <Button
+                    mode="contained"
+                    onPress={() => startCalling()}
+                    loading={calling}
+                    contentStyle={styles.btnContent}
+                    disabled={!socketActive || callToUsername === '' || callActive || !permissionsGranted}
+                    style={[styles.button, styles.callButton]}
+                    children="Call" />
+                  <Button
+                    mode="contained"
+                    onPress={handleHangUp}
+                    contentStyle={styles.btnContent}
+                    disabled={!callActive}
+                    style={[styles.button, styles.endCallButton]}
+                    children="End Call" />
+                </View>
               </View>
-            ) : (
-              <Text style={[styles.statusText, { textAlign: 'center' }]}>
-                No other users available
-              </Text>
-            )}
-          </View>
-          <View style={styles.videoContainer}>
-            <View style={[styles.videos, styles.localVideos]}>
-              <Text style={styles.videoLabel} children="Your Video" />
+              {/* available users containers */}
+              <View style={styles.availableUsersContainer}>
+                <Text style={styles.availableUsersText}>Available Users</Text>
+                {availableUsers.length > 1 || availableUsers.length === 0 ? (
+                  <View style={styles.usersGrid}>
+                    {availableUsers
+                      .filter(user => user !== userId) // Don't show current user
+                      .map((userName, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          onPress={() => startCalling(userName)}
+                          disabled={!socketActive || callActive || !permissionsGranted || calling}
+                          style={styles.gridCardContainer}
+                        >
+                          <Card style={styles.userCard}>
+                            <Card.Content style={styles.userCardContent}>
+                              <Text style={styles.userName}>{userName}</Text>
+                              <Button
+                                mode="contained"
+                                icon="phone"
+                                onPress={() => startCalling(userName)}
+                                disabled={!socketActive || callActive || !permissionsGranted || calling}
+                                style={styles.callIcon}
+                                compact
+                              >
+                                Call
+                              </Button>
+                            </Card.Content>
+                          </Card>
+                        </TouchableOpacity>
+                      ))}
+                  </View>
+                ) : (
+                  <Text style={[styles.statusText, { textAlign: 'center' }]}>
+                    No other users available
+                  </Text>
+                )}
+              </View>
+              <View style={styles.videoContainer}>
+                <View style={[styles.videos, styles.localVideos]}>
+                  <Text style={styles.videoLabel} children="Your Video" />
+                  {localPreviewStream ? (
+                    <RTCView
+                      stream={localPreviewStream}
+                      style={styles.localVideo}
+                      objectfit="cover"
+                    />
+                  ) : (
+                    <View style={[styles.localVideo, styles.noVideoContainer]}>
+                      <Text style={styles.noVideoText} children="No local video stream" />
+                      <Text style={[styles.noVideoText, { fontSize: 12 }]} children={`Permissions: ${permissionsGranted ? 'Granted' : 'Not Granted'}`} />
+                    </View>
+                  )}
+                </View>
+
+
+                {Platform.OS === 'web' && (
+                  <View>
+                    <Text>Camera:</Text>
+                    <Picker
+                      selectedValue={selectedVideoDeviceId}
+                      onValueChange={setSelectedVideoDeviceId}>
+                      {videoDevices.map(device => (
+                        <Picker.Item key={device.deviceId} label={device.label || 'Camera'} value={device.deviceId} />
+                      ))}
+                    </Picker>
+                    <Text>Microphone:</Text>
+                    <Picker
+                      selectedValue={selectedAudioDeviceId}
+                      onValueChange={setSelectedAudioDeviceId}>
+                      {audioDevices.map(device => (
+                        <Picker.Item key={device.deviceId} label={device.label || 'Microphone'} value={device.deviceId} />
+                      ))}
+                    </Picker>
+                    <Button onPress={switchMediaDevices}>Switch Devices</Button>
+                  </View>
+                )}
+
+
+
+                <View style={[styles.videos, styles.remoteVideos]}>
+                  <Text style={styles.videoLabel} children="Friends Video" />
+                  {remoteStream ? (
+                    <RTCView
+                      stream={remoteStream}
+                      style={styles.remoteVideo}
+                      objectfit="cover"
+                    />
+                  ) : (
+                    <View style={[styles.remoteVideo, styles.noVideoContainer]}>
+                      <Text style={styles.noVideoText} children="No remote video stream" />
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Web-specific content for better scrolling experience */}
+              {Platform.OS === 'web' && (
+                <View style={styles.webFooter}>
+                  <Text style={styles.footerText} children="WebRTC Video Call App" />
+                  <Text style={styles.footerSubtext} children="Built with React Native and Expo" />
+                </View>
+              )}
+              {Platform.OS !== 'web' && (
+                <View style={styles.webFooter}>
+                  <Text style={styles.footerText} children="WebRTC Video Call App" />
+                  <Text style={styles.footerSubtext} children="Built with React Native and Expo" />
+                </View>
+              )}
+            </View>
+          </ScrollView>
+
+
+
+          {/* incoming call modal */}
+          <Modal isVisible={incomingCall && !callActive}>
+            <View style={styles.modalContent}>
+
+              <Icon
+                source="account-circle"
+                size={104}
+                color="#c4dcff"
+              />
+
+              <Text children={`${otherId} is calling you`} />
+
+              <ActivityIndicator animating={true} color="#5166EC" size={50} style={styles.loadingIndicator} />
+
+              <View style={styles.callContainer}>
+                {/* <Button onPress={acceptCall} style={styles.finalCallButton} icon="phone" /> */}
+
+                <TouchableOpacity
+                  onPress={acceptCall} style={styles.finalAcceptCallButton}
+                >
+                  <Icon
+                    source="phone"
+                    size={54}
+                    color="#FFF"
+                  />
+                </TouchableOpacity>
+
+                {/* <Button onPress={handleHangUp} style={styles.finalHangupCallButton} icon="phone-hangup" /> */}
+
+                <TouchableOpacity
+                  onPress={handleHangUp} style={styles.finalHangupCallButton}
+                >
+                  <Icon
+                    source="phone-hangup"
+                    size={54}
+                    color="#FFF"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+          <Modal isVisible={calling}>
+            <View style={styles.modalContentCall}>
+
+              <Icon
+                source="account-circle"
+                size={104}
+                color="#c4dcff"
+              />
+
+              <Text children={`Calling ${otherId}...`} />
+
+              <ActivityIndicator animating={true} color="#5166EC" size={50} style={styles.loadingIndicator} />
+
+              {/* <Button onPress={handleHangUp} style={styles.finalHangupCallButton} icon="phone-hangup" /> */}
+              <TouchableOpacity
+                onPress={handleHangUp} style={styles.finalHangupCallButton}
+              >
+                <Icon
+                  source="phone-hangup"
+                  size={54}
+                  color="#FFF"
+                />
+              </TouchableOpacity>
+            </View>
+          </Modal>
+        </View>
+      )}
+
+      {callActive && (
+        <View style={styles.callVideoContainer}>
+
+          {/* <Text style={{ color: '#FFF', fontSize: 20, marginBottom: 10 }} children={'Callers: ' + (otherCallNum + 1)} /> */}
+
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+            <View style={[
+              styles.callVideos,
+              styles.callLocalVideos,
+              otherCallNum >= 2 ?
+                { width: highUserVideoWidth, height: highUserVideoHeight }
+                : { width: lowUserVideoWidth, height: lowUserVideoHeight }
+            ]}>
+
+              <View style={styles.callNameText}>
+                <Text style={styles.callVideoLabel} children={userId} />
+              </View>
+
+              <View
+                style={microphoneEnabled ? styles.callMicStatusUnmuted : styles.callMicStatusMuted}
+              >
+                {microphoneEnabled ? (
+                  <IconButton
+                    icon="microphone"
+                    size={22}
+                    color="#FFF"
+                    style={{ position: 'static' }}
+                  />
+                ) : (
+                  <IconButton
+                    icon="microphone-off"
+                    size={22}
+                    color="#FFF"
+                    style={{ position: 'static' }}
+                  />
+                )}
+              </View>
+
+              <View
+                style={cameraEnabled ? styles.callCameraStatusOn : styles.callCameraStatusOff}
+              >
+                {cameraEnabled ? (
+                  <IconButton
+                    icon="camera"
+                    size={22}
+                    color="#FFF"
+                    style={{ position: 'static' }}
+                  />
+                ) : (
+                  <IconButton
+                    icon="camera-off"
+                    size={22}
+                    color="#FFF"
+                    style={{ position: 'static' }}
+                  />
+                )}
+              </View>
+
               {localPreviewStream ? (
                 <RTCView
                   stream={localPreviewStream}
-                  style={styles.localVideo}
+                  style={styles.callLocalVideo}
                   objectfit="cover"
                 />
               ) : (
-                <View style={[styles.localVideo, styles.noVideoContainer]}>
-                  <Text style={styles.noVideoText} children="No local video stream" />
-                  <Text style={[styles.noVideoText, { fontSize: 12 }]} children={`Permissions: ${permissionsGranted ? 'Granted' : 'Not Granted'}`} />
+                <View style={[styles.callLocalVideo, styles.callNoVideoContainer]}>
+                  <Text style={styles.callNoVideoText} children="No local video stream" />
+                  <Text style={[styles.callNoVideoText, { fontSize: 12 }]} children={`Permissions: ${permissionsGranted ? 'Granted' : 'Not Granted'}`} />
                 </View>
               )}
+
             </View>
 
+            <View>
 
-            {Platform.OS === 'web' && (
-              <View>
-                <Text>Camera:</Text>
-                <Picker
-                  selectedValue={selectedVideoDeviceId}
-                  onValueChange={setSelectedVideoDeviceId}>
-                  {videoDevices.map(device => (
-                    <Picker.Item key={device.deviceId} label={device.label || 'Camera'} value={device.deviceId} />
-                  ))}
-                </Picker>
-                <Text>Microphone:</Text>
-                <Picker
-                  selectedValue={selectedAudioDeviceId}
-                  onValueChange={setSelectedAudioDeviceId}>
-                  {audioDevices.map(device => (
-                    <Picker.Item key={device.deviceId} label={device.label || 'Microphone'} value={device.deviceId} />
-                  ))}
-                </Picker>
-                <Button onPress={switchMediaDevices}>Switch Devices</Button>
-              </View>
-            )}
-
-
-
-            <View style={[styles.videos, styles.remoteVideos]}>
-              <Text style={styles.videoLabel} children="Friends Video" />
-              {remoteStream ? (
-                <RTCView
-                  stream={remoteStream}
-                  style={styles.remoteVideo}
-                  objectfit="cover"
-                />
-              ) : (
-                <View style={[styles.remoteVideo, styles.noVideoContainer]}>
-                  <Text style={styles.noVideoText} children="No remote video stream" />
-                </View>
-              )}
             </View>
+
+            {/* <View style={[styles.callVideos, styles.callRemoteVideos]}>
+
+                      <View style={styles.callNameText}>
+                          <Text style={styles.callVideoLabel} children={otherId} />
+                      </View>
+
+                      {remoteStream ? (
+                          <RTCView
+                              stream={remoteStream}
+                              style={styles.callRemoteVideo}
+                              objectfit="cover"
+                          />
+                      ) : (
+                          <View style={[styles.callRemoteVideo, styles.callNoVideoContainer]}>
+                              <Text style={styles.callNoVideoText} children="No remote video stream" />
+                          </View>
+                      )}
+
+                  </View> */}
+
+            {otherCallerStreams}
+
           </View>
 
-          {/* Web-specific content for better scrolling experience */}
-          {Platform.OS === 'web' && (
-            <View style={styles.webFooter}>
-              <Text style={styles.footerText} children="WebRTC Video Call App" />
-              <Text style={styles.footerSubtext} children="Built with React Native and Expo" />
-            </View>
-          )}
-          {Platform.OS !== 'web' && (
-            <View style={styles.webFooter}>
-              <Text style={styles.footerText} children="WebRTC Video Call App" />
-              <Text style={styles.footerSubtext} children="Built with React Native and Expo" />
-            </View>
-          )}
-        </View>
-      </ScrollView>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
 
+            <Button
+              onPress={() => {
+                setMicrophoneEnabled(!microphoneEnabled);
+                microphoneEnabledRef.current = !microphoneEnabled;
 
+                if (callActive) {
+                  const sender = yourConn.current?.getSenders().forEach(sender => {
+                    if (sender.track != null && sender.track.kind == 'audio') {
+                      sender.track.enabled = microphoneEnabledRef.current;
+                      console.log(`Audio track checked here: ${sender.track.kind} (${sender.track.id})`);
+                      console.log(sender.track);
+                      console.log(remoteStreamRef.current.getAudioTracks());
+                    }
+                  });
+                }
+              }}
 
-      {/* incoming call modal */}
-      <Modal isVisible={incomingCall && !callActive}>
-        <View style={styles.modalContent}>
+              style={microphoneEnabled ? styles.callMuteButtonUnmuted : styles.callMuteButtonMuted}
+            >
+              {microphoneEnabled ? (
+                <Icon
+                  source="microphone"
+                  size={30}
+                  style={{ padding: 20 }}
+                />
+              ) : (
+                <Icon
+                  source="microphone-off"
+                  size={30}
+                  style={{ padding: 20 }}
+                />
+              )
+              }
 
-          <Icon
-            source="account-circle"
-            size={104}
-            color="#c4dcff"
-          />
+              {/* <Text children="Microphone" /> */}
+            </Button>
 
-          <Text children={`${otherId} is calling you`} />
+            <Button
+              onPress={() => {
+                setCameraEnabled(!cameraEnabled);
+                cameraEnabledRef.current = !cameraEnabled;
 
-          <ActivityIndicator animating={true} color="#5166EC" size={50} style={styles.loadingIndicator} />
+                if (callActive) {
+                  const sender = yourConn.current?.getSenders().forEach(sender => {
+                    if (sender.track != null && sender.track.kind == 'video') {
+                      sender.track.enabled = cameraEnabledRef.current;
+                      console.log(`Video track checked here: ${sender.track.kind} (${sender.track.id})`);
+                    }
+                  });
+                }
+              }}
 
-          <View style={styles.callContainer}>
-            {/* <Button onPress={acceptCall} style={styles.finalCallButton} icon="phone" /> */}
+              style={cameraEnabled ? styles.callCameraButtonOn : styles.callCameraButtonOff}
+            >
+              {cameraEnabled ? (
+                <Icon
+                  source="video"
+                  size={30}
+                  style={{ padding: 20 }}
+                />
+              ) : (
+                <Icon
+                  source="video-off"
+                  size={30}
+                  style={{ padding: 20 }}
+                />
+              )}
+            </Button>
 
-            <TouchableOpacity
-              onPress={acceptCall} style={styles.finalAcceptCallButton}
+            <Button
+              style={styles.callAddContactsButton}
             >
               <Icon
-                source="phone"
-                size={54}
-                color="#FFF"
+                source="account-multiple-plus"
+                size={30}
+                style={{ padding: 20 }}
               />
-            </TouchableOpacity>
+            </Button>
 
-            {/* <Button onPress={handleHangUp} style={styles.finalHangupCallButton} icon="phone-hangup" /> */}
+            <Button
+              mode="contained"
+              onPress={() => {
+                // Alert.alert("Call Ended", "You have ended the call.");
+                // send({
+                //     type: 'hangUp',
+                //     sender: userIdRef.current,
+                //     receiver: connectedUserId.current,
+                // });
+                handleHangUp();
+                // navigation.goBack();
+              }}
 
-            <TouchableOpacity
-              onPress={handleHangUp} style={styles.finalHangupCallButton}
+              style={styles.callHangupButton}
             >
               <Icon
                 source="phone-hangup"
-                size={54}
-                color="#FFF"
+                size={30}
+                style={{ padding: 20 }}
               />
-            </TouchableOpacity>
+            </Button>
+
           </View>
+
+          {/* <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                  <Button
+                      mode="contained"
+                      onPress={() => {
+                          setOtherCallNum(otherCallNum - 1);
+                      }}
+                  >
+                      <Text children="Remove -" />
+                  </Button>
+
+                  <Button
+                      mode="contained"
+                      onPress={() => {
+                          setOtherCallNum(otherCallNum + 1);
+                      }}
+                  >
+                      <Text children="Add +" />
+                  </Button>
+              </View> */}
+
+
         </View>
-      </Modal>
-      <Modal isVisible={calling}>
-        <View style={styles.modalContentCall}>
+      )}
 
-          <Icon
-            source="account-circle"
-            size={104}
-            color="#c4dcff"
-          />
-
-          <Text children={`Calling ${otherId}...`} />
-
-          <ActivityIndicator animating={true} color="#5166EC" size={50} style={styles.loadingIndicator} />
-
-          {/* <Button onPress={handleHangUp} style={styles.finalHangupCallButton} icon="phone-hangup" /> */}
-          <TouchableOpacity
-            onPress={handleHangUp} style={styles.finalHangupCallButton}
-          >
-            <Icon
-              source="phone-hangup"
-              size={54}
-              color="#FFF"
-            />
-          </TouchableOpacity>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -1723,5 +2006,171 @@ const styles = StyleSheet.create({
   loadingIndicator: {
     marginTop: 20,
     marginBottom: 20,
+  },
+
+
+
+
+
+  callVideoContainer: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: '#222',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  callVideos: {
+    // width: '100%',
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 12,
+    // backgroundColor: '#f8f9fa',
+    // borderWidth: 1,
+    // borderColor: '#e9ecef',
+    margin: 15,
+
+    // width: highUserVideoWidth,
+    // height: highUserVideoHeight,
+
+    // minHeight: Platform.OS === 'web' ? 100 : 50,
+    // maxHeight: Platform.OS === 'web' ? 500 : 300,
+    // minWidth: Platform.OS === 'web' ? 100 : 50,
+    // maxWidth: Platform.OS === 'web' ? '100%' : '100%',
+  },
+  callLocalVideos: {
+    position: 'relative',
+    // height: Platform.OS === 'web' ? 400 : 350,
+    // minHeight: Platform.OS === 'web' ? 300 : 50,
+    marginBottom: Platform.OS === 'web' ? 20 : 15,
+    // width: highUserVideoWidth,
+    // height: highUserVideoHeight,
+  },
+  callRemoteVideos: {
+    position: 'relative',
+    // minHeight: Platform.OS === 'web' ? 300 : 50,
+    marginBottom: Platform.OS === 'web' ? 20 : 15,
+    // width: highUserVideoWidth,
+    // height: highUserVideoHeight,
+  },
+  callLocalVideo: {
+    // backgroundColor: '#f8f9fa',
+    height: '100%',
+    width: '100%',
+    borderRadius: 12,
+  },
+  callRemoteVideo: {
+    // backgroundColor: '#f8f9fa',
+    height: '100%',
+    width: '100%',
+    borderRadius: 12,
+  },
+  callVideoLabel: {
+    margin: 8,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  callNameText: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    zIndex: 1,
+    backgroundColor: '#5166EC',
+    padding: 4,
+    borderRadius: 8,
+    opacity: 0.8,
+  },
+  callMicStatusUnmuted: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
+    backgroundColor: '#525252ff',
+    padding: 4,
+    borderRadius: 8,
+    opacity: 0.8,
+  },
+  callMicStatusMuted: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
+    backgroundColor: '#FF3B30',
+    padding: 4,
+    borderRadius: 8,
+    opacity: 1,
+  },
+
+  callCameraStatusOn: {
+    position: 'absolute',
+    top: 10,
+    right: 75,
+    zIndex: 1,
+    backgroundColor: '#525252ff',
+    padding: 4,
+    borderRadius: 8,
+    opacity: 0.8,
+  },
+
+  callCameraStatusOff: {
+    position: 'absolute',
+    top: 10,
+    right: 75,
+    zIndex: 1,
+    backgroundColor: '#FF3B30',
+    padding: 4,
+    borderRadius: 8,
+    opacity: 1,
+  },
+
+  callNoVideoContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  callNoVideoText: {
+    color: '#888',
+  },
+
+  callMuteButtonUnmuted: {
+    backgroundColor: '#525252ff',
+    borderRadius: 100,
+    // padding: 10,
+    marginHorizontal: 10,
+  },
+
+  callMuteButtonMuted: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 100,
+    // padding: 10,
+    marginHorizontal: 10,
+  },
+
+  callCameraButtonOn: {
+    backgroundColor: '#525252ff',
+    borderRadius: 100,
+    // padding: 10,
+    marginHorizontal: 5,
+  },
+
+  callCameraButtonOff: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 100,
+    // padding: 10,
+    marginHorizontal: 5,
+  },
+
+  callHangupButton: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 100,
+    // padding: 10,
+    marginHorizontal: 10,
+  },
+
+  callAddContactsButton: {
+    backgroundColor: '#5166EC',
+    borderRadius: 100,
+    // padding: 10,
+    marginHorizontal: 10,
   },
 }); 

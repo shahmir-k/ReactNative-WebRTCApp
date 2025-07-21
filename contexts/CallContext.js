@@ -899,22 +899,50 @@ export const CallProvider = ({ children }) => {
 
         try {
             const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+            ['audio', 'video'].forEach(kind => {
+                const newTrack = newStream.getTracks().find(t => t.kind === kind);
+                const oldTrack = localStreamRef.current.getTracks().find(t => t.kind === kind);
+
+                const sender = yourConn.current?.getSenders().find(
+                    s => s.track && s.track.kind === kind
+                );
+
+                if (sender && oldTrack) {
+                    yourConn.current.removeTrack(oldTrack);
+                }
+
+                if (sender && newTrack) {
+                    sender.addTrack(newTrack, newStream);
+                } else if (newTrack) {
+                    // yourConn.current.addTrack(newTrack, newStream);
+                }
+
+                // Stop the old track to release resources
+                if (oldTrack) {
+                    oldTrack.stop();
+                    localStreamRef.current.removeTrack(oldTrack);
+                }
+
+            });
+
+
             setLocalStream(newStream);
             localStreamRef.current = newStream;
 
             // Replace tracks in peer connection
-            if (yourConn.current) {
-                // For each kind, replace or add
-                ['audio', 'video'].forEach(kind => {
-                    const newTrack = newStream.getTracks().find(t => t.kind === kind);
-                    const sender = yourConn.current.getSenders().find(s => s.track && s.track.kind === kind);
-                    if (sender && newTrack) {
-                        sender.replaceTrack(newTrack);
-                    } else if (newTrack) {
-                        yourConn.current.addTrack(newTrack, newStream);
-                    }
-                });
-            }
+            // if (yourConn.current) {
+            //     // For each kind, replace or add
+            //     ['audio', 'video'].forEach(kind => {
+            //         const newTrack = newStream.getTracks().find(t => t.kind === kind);
+            //         const sender = yourConn.current.getSenders().find(s => s.track && s.track.kind === kind);
+            //         if (sender && newTrack) {
+            //             sender.replaceTrack(newTrack);
+            //         } else if (newTrack) {
+            //             yourConn.current.addTrack(newTrack, newStream);
+            //         }
+            //     });
+            // }
 
             // Update local preview
             const videoTracks = newStream.getVideoTracks();
@@ -924,17 +952,17 @@ export const CallProvider = ({ children }) => {
             }
 
             // --- Renegotiate if in a call ---
-            if (callActive && yourConn.current) {
-                // Create a new offer and send to remote
-                const offer = await yourConn.current.createOffer();
-                await yourConn.current.setLocalDescription(offer);
-                send({
-                    type: 'offer',
-                    sender: userIdRef.current,
-                    receiver: connectedUser.current,
-                    data: offer,
-                });
-            }
+            // if (callActive && yourConn.current) {
+            //     // Create a new offer and send to remote
+            //     const offer = await yourConn.current.createOffer();
+            //     await yourConn.current.setLocalDescription(offer);
+            //     send({
+            //         type: 'offer',
+            //         sender: userIdRef.current,
+            //         receiver: connectedUser.current,
+            //         data: offer,
+            //     });
+            // }
 
             console.log("Switch Media Devices has now been completed:");
         } catch (err) {
