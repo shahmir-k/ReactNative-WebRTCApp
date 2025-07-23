@@ -19,6 +19,7 @@ module.exports = {
       supportsTablet: true
     },
     android: {
+      package: "com.swomp3.webrtcapp",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff"
@@ -41,6 +42,9 @@ module.exports = {
       BUNDLE_POLICY: process.env.BUNDLE_POLICY || "balanced",
       RTCP_MUX_POLICY: process.env.RTCP_MUX_POLICY || "require",
       ICE_TRANSPORT_POLICY: process.env.ICE_TRANSPORT_POLICY || "all",
+      eas: {
+        projectId: "376067b0-0b7e-4932-b77a-feaf613d744c"
+      },
     },
     plugins: [
       "@config-plugins/react-native-webrtc",

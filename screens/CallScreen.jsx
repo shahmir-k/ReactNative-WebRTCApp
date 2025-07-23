@@ -78,11 +78,17 @@ const ICE_SERVERS = [
 ];
 
 
-const highUserVideoWidth = Platform.OS === 'web' ? 550 : 320;
-const highUserVideoHeight = Platform.OS === 'web' ? '100' : '100';
+// const highUserVideoWidth = Platform.OS === 'web' ? 550 : 320;
+// const highUserVideoHeight = Platform.OS === 'web' ? '100' : '100';
 
-const lowUserVideoWidth = Platform.OS === 'web' ? 850 : 160;
-const lowUserVideoHeight = Platform.OS === 'web' ? '100' : '100';
+// const lowUserVideoWidth = Platform.OS === 'web' ? 850 : 160;
+// const lowUserVideoHeight = Platform.OS === 'web' ? '100' : '100';
+
+const highUserVideoWidth = Platform.OS === 'web' ? 550 : 165;
+const highUserVideoHeight = Platform.OS === 'web' ? 310 : 200;
+
+const lowUserVideoWidth = Platform.OS === 'web' ? 850 : 280;
+const lowUserVideoHeight = Platform.OS === 'web' ? 480 : 280;
 
 
 export default function CallScreen({ navigation }) {
@@ -1208,57 +1214,6 @@ export default function CallScreen({ navigation }) {
     }
   }, []);
 
-
-  // const {
-  //   userId, setUserId,
-  //   socketActive, setSocketActive,
-  //   calling, setCalling,
-  //   localStream, setLocalStream,
-  //   remoteStream, setRemoteStream,
-  //   localPreviewStream, setLocalPreviewStream,
-  //   permissionsGranted, setPermissionsGranted,
-  //   callActive, setCallActive,
-  //   incomingCall, setIncomingCall,
-  //   otherId, setOtherId,
-  //   callToUsername, setCallToUsername,
-  //   availableUsers, setAvailableUsers,
-  //   error, setError,
-
-  //   // Refs
-  //   conn,
-  //   yourConn,
-  //   userIdRef,
-  //   connectedUser,
-  //   offerRef,
-  //   callActiveRef,
-  //   iceCandidateQueue,
-  //   remoteDescriptionSet,
-  //   localStreamRef,
-  //   remoteStreamRef,
-  //   permissionsGrantedRef,
-
-  //   // Functions
-  //   checkPermissionsAndInitVideo,
-  //   initLocalVideo,
-  //   registerPeerEvents,
-  //   fetchAvailableUsers,
-  //   resetPeer,
-  //   send,
-  //   startCalling,
-  //   sendCallOffer,
-  //   handleOffer,
-  //   acceptCall,
-  //   handleAnswer,
-  //   handleCandidate,
-  //   checkAllMediaActive,
-  //   stopAllMediaGlobally,
-  //   forceStopAllMedia,
-  //   cleanupAllMedia,
-  //   handleHangUp,
-  //   handleLogout,
-  //   onLogout,
-  // } = useCall();
-
   const [otherCallNum, setOtherCallNum] = useState(1);
 
   const otherCallerStreams = [];
@@ -1275,8 +1230,15 @@ export default function CallScreen({ navigation }) {
         styles.callVideos,
         styles.callLocalVideos,
         otherCallNum >= 2 ?
-          { width: highUserVideoWidth, height: highUserVideoHeight }
-          : { width: lowUserVideoWidth, height: lowUserVideoHeight }
+          {
+
+            maxWidth: highUserVideoWidth,
+            height: highUserVideoHeight
+          }
+          : {
+            maxWidth: lowUserVideoWidth,
+            height: lowUserVideoHeight
+          }
       ]}>
         <View style={styles.callNameText}>
           <Text style={styles.callVideoLabel} children={otherId + ` ${i + 1}`} />
@@ -1527,7 +1489,8 @@ export default function CallScreen({ navigation }) {
       )}
 
       {callActive && (
-        <View style={styles.callVideoContainer}>
+        // <View style={styles.callVideoContainer}>
+        <View>
 
           {/* <Text style={{ color: '#FFF', fontSize: 20, marginBottom: 10 }} children={'Callers: ' + (otherCallNum + 1)} /> */}
 
@@ -1536,8 +1499,14 @@ export default function CallScreen({ navigation }) {
               styles.callVideos,
               styles.callLocalVideos,
               otherCallNum >= 2 ?
-                { width: highUserVideoWidth, height: highUserVideoHeight }
-                : { width: lowUserVideoWidth, height: lowUserVideoHeight }
+                {
+                  maxWidth: highUserVideoWidth,
+                  height: highUserVideoHeight
+                }
+                : {
+                  maxWidth: lowUserVideoWidth,
+                  height: lowUserVideoHeight
+                }
             ]}>
 
               <View style={styles.callNameText}>
@@ -1599,10 +1568,6 @@ export default function CallScreen({ navigation }) {
 
             </View>
 
-            <View>
-
-            </View>
-
             {/* <View style={[styles.callVideos, styles.callRemoteVideos]}>
 
                       <View style={styles.callNameText}>
@@ -1627,7 +1592,7 @@ export default function CallScreen({ navigation }) {
 
           </View>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+          <View style={styles.callButtonLayout}>
 
             <Button
               onPress={() => {
@@ -1732,25 +1697,25 @@ export default function CallScreen({ navigation }) {
 
           </View>
 
-          {/* <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                  <Button
-                      mode="contained"
-                      onPress={() => {
-                          setOtherCallNum(otherCallNum - 1);
-                      }}
-                  >
-                      <Text children="Remove -" />
-                  </Button>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+            <Button
+              mode="contained"
+              onPress={() => {
+                setOtherCallNum(otherCallNum - 1);
+              }}
+            >
+              <Text children="Remove -" />
+            </Button>
 
-                  <Button
-                      mode="contained"
-                      onPress={() => {
-                          setOtherCallNum(otherCallNum + 1);
-                      }}
-                  >
-                      <Text children="Add +" />
-                  </Button>
-              </View> */}
+            <Button
+              mode="contained"
+              onPress={() => {
+                setOtherCallNum(otherCallNum + 1);
+              }}
+            >
+              <Text children="Add +" />
+            </Button>
+          </View>
 
 
         </View>
@@ -2028,6 +1993,8 @@ const styles = StyleSheet.create({
     // borderWidth: 1,
     // borderColor: '#e9ecef',
     margin: 15,
+    height: 480,
+    width: 850,
 
     // width: highUserVideoWidth,
     // height: highUserVideoHeight,
@@ -2053,16 +2020,18 @@ const styles = StyleSheet.create({
     // height: highUserVideoHeight,
   },
   callLocalVideo: {
-    // backgroundColor: '#f8f9fa',
+    backgroundColor: '#151515ff',
     height: '100%',
     width: '100%',
     borderRadius: 12,
+    border: '#000000',
   },
   callRemoteVideo: {
-    // backgroundColor: '#f8f9fa',
+    backgroundColor: '#151515ff',
     height: '100%',
     width: '100%',
     borderRadius: 12,
+    border: '#000000',
   },
   callVideoLabel: {
     margin: 8,
@@ -2173,4 +2142,14 @@ const styles = StyleSheet.create({
     // padding: 10,
     marginHorizontal: 10,
   },
+
+  callButtonLayout: {
+    flexDirection: 'row',
+    // justifyContent: 'space-around',
+    // flex: 1,
+    padding: 10,
+    backgroundColor: '#222',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }
 }); 
