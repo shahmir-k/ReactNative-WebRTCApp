@@ -87,8 +87,8 @@ const ICE_SERVERS = [
 const highUserVideoWidth = Platform.OS === 'web' ? 550 : 165;
 const highUserVideoHeight = Platform.OS === 'web' ? 310 : 200;
 
-const lowUserVideoWidth = Platform.OS === 'web' ? 850 : 280;
-const lowUserVideoHeight = Platform.OS === 'web' ? 480 : 280;
+const lowUserVideoWidth = Platform.OS === 'web' ? 850 : 300;
+const lowUserVideoHeight = Platform.OS === 'web' ? 480 : 260;
 
 
 export default function CallScreen({ navigation }) {
@@ -1385,7 +1385,7 @@ export default function CallScreen({ navigation }) {
 
 
 
-                <View style={[styles.videos, styles.remoteVideos]}>
+                {/* <View style={[styles.videos, styles.remoteVideos]}>
                   <Text style={styles.videoLabel} children="Friends Video" />
                   {remoteStream ? (
                     <RTCView
@@ -1398,7 +1398,7 @@ export default function CallScreen({ navigation }) {
                       <Text style={styles.noVideoText} children="No remote video stream" />
                     </View>
                   )}
-                </View>
+                </View> */}
               </View>
 
               {/* Web-specific content for better scrolling experience */}
